@@ -18,7 +18,7 @@ def place_order(request, product_id):
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity'))
         address = request.POST.get('address')
-
+ 
         order = Order.objects.create(
             customer=request.user,
             product=product,
@@ -172,4 +172,4 @@ def checkout(request):
         cart.items.all().delete()
         return render(request, 'order_success.html')
 
-    return render(request, 'checkout.html', {'cart': cart})     
+    return render(request, 'checkout.html', {'cart': cart})    
