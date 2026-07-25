@@ -23,21 +23,26 @@ class Product(models.Model):
         return self.name
 
 from django.contrib.auth import get_user_model
-
 class Order(models.Model):
-    STATUS_CHOICES = [
+    PAYMENT_CHOICES = [
+        ('cod', 'Cash on Delivery'),
+        ('upi', 'UPI'),
+    ]
+    customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
-    ]
-    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
+    ], default='pending')
     address = models.TextField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     delivery_otp = models.CharField(max_length=6, blank=True, null=True)
-    ordered_at = models.DateTimeField(auto_now_add=True)
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='cod')
+    payment_screenshot = models.ImageField(upload_to='payment_proofs/', null=True, blank=True)
+    payment_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
     def generate_otp(self):
@@ -45,7 +50,32 @@ class Order(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.customer} - {self.product.name} ({self.quantity})"        
+        return f"{self.customer} - {self.product.name} ({self.quantity})"  
+
+
+class Cart(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='cart')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def total_price(self):
+        return sum(item.subtotal() for item in self.items.all())
+
+    def total_items(self):
+        return sum(item.quantity for item in self.items.all())
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        unique_together = ('cart', 'product')
+
+    def subtotal(self):
+        return self.product.price * self.quantity 
+
+                     
 
 
 

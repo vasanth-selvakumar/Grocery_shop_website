@@ -1,7 +1,7 @@
 from django.views.generic import ListView
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Product, Order
+from django.shortcuts import get_object_or_404, redirect, render
+from .models import Product, Cart, CartItem, Order
 from .utils import send_order_notification
 
 
@@ -65,4 +65,111 @@ def verify_delivery(request):
         except Order.DoesNotExist:
             message = '❌ Invalid Order ID or order not out for delivery.'
 
-    return render(request, 'verify_delivery.html', {'message': message})    
+    return render(request, 'verify_delivery.html', {'message': message})  
+
+@login_required
+def checkout(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    if not cart.items.exists():
+        return redirect('view_cart')
+
+    if request.method == 'POST':
+        address = request.POST.get('address')
+        payment_method = request.POST.get('payment_method')
+        screenshot = request.FILES.get('payment_screenshot')
+
+        if payment_method == 'upi' and not screenshot:
+            return render(request, 'checkout.html', {
+                'cart': cart,
+                'error': 'UPI screenshot compulsory'
+            })
+
+        for item in cart.items.all():
+            order = Order.objects.create(
+                customer=request.user,
+                product=item.product,
+                quantity=item.quantity,
+                address=address,
+                status='pending',
+                payment_method=payment_method,
+                payment_screenshot=screenshot if payment_method == 'upi' else None
+            )
+            send__order_notification(order)
+        cart.items.all().delete()
+        return render(request, 'order_success.html')
+
+    return render(request, 'checkout.html', {'cart': cart})   
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from .models import Product, Cart, CartItem, Order
+from .utils import send_order_notification
+
+
+@login_required
+def add_to_cart(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+    if not created:
+        item.quantity += 1
+        item.save()
+    return redirect('view_cart')
+
+
+@login_required
+def view_cart(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    return render(request, 'cart.html', {'cart': cart})
+
+
+@login_required
+def update_cart_item(request, item_id):
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    action = request.POST.get('action')
+    if action == 'increase':
+        item.quantity += 1
+        item.save()
+    elif action == 'decrease':
+        item.quantity -= 1
+        if item.quantity <= 0:
+            item.delete()
+        else:
+            item.save()
+    elif action == 'remove':
+        item.delete()
+    return redirect('view_cart')
+
+
+@login_required
+def checkout(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    if not cart.items.exists():
+        return redirect('view_cart')
+
+    if request.method == 'POST':
+        address = request.POST.get('address')
+        payment_method = request.POST.get('payment_method')
+        screenshot = request.FILES.get('payment_screenshot')
+
+        if payment_method == 'upi' and not screenshot:
+            return render(request, 'checkout.html', {
+                'cart': cart,
+                'error': 'UPI screenshot compulsory'
+            })
+
+        for item in cart.items.all():
+            order = Order.objects.create(
+                customer=request.user,
+                product=item.product,
+                quantity=item.quantity,
+                address=address,
+                status='pending',
+                payment_method=payment_method,
+                payment_screenshot=screenshot if payment_method == 'upi' else None
+            )
+            send_whatsapp_order_notification(order)
+        cart.items.all().delete()
+        return render(request, 'order_success.html')
+
+    return render(request, 'checkout.html', {'cart': cart})     

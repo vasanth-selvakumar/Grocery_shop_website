@@ -12,7 +12,7 @@ class CustomUserAdmin(UserAdmin):
     )
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'product', 'quantity', 'status', 'ordered_at')
+    list_display = ('id', 'customer', 'product', 'quantity', 'status', )
 
     def save_model(self, request, obj, form, change):
         if change:
