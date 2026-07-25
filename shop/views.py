@@ -168,7 +168,7 @@ def checkout(request):
                 payment_method=payment_method,
                 payment_screenshot=screenshot if payment_method == 'upi' else None
             )
-            send_whatsapp_order_notification(order)
+            send_order_notification(order)
         cart.items.all().delete()
         return render(request, 'order_success.html')
 
