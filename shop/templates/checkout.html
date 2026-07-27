@@ -1,5 +1,5 @@
-{% extends 'base.html' %}
 {% load static %}
+{% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
   <h2>Checkout</h2>
@@ -28,7 +28,7 @@
 
     <div id="upi-section" style="display:none;" class="mb-3 text-center">
       <p>Scan this QR and pay ₹{{ cart.total_price }}</p>
-      <img src="{% static 'shop/upi_qr.png' %}" alt="UPI QR" width="200">
+      <img src="{% static 'shop/images/upi_qr.png' %}" alt="UPI QR" width="200">
       <div class="mt-3">
         <label class="form-label">Upload Payment Screenshot</label>
         <input type="file" name="payment_screenshot" accept="image/*" class="form-control">
