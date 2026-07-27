@@ -9,18 +9,51 @@
 <div class="container mt-4">
     <h3>Order: {{ product.name }}</h3>
     <p>Price: ₹{{ product.price }}</p>
-    <form method="post">
+
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+
         <div class="mb-3">
             <label>Quantity</label>
-            <input type="number" name="quantity" min="1" value="1" class="form-control" style="width:150px;">
+            <input type="number" name="quantity" min="1" value="1" class="form-control" style="width:150px;" id="quantity">
         </div>
+
         <div class="mb-3">
             <label>Delivery Address</label>
             <textarea name="address" class="form-control" rows="3" required></textarea>
         </div>
+
+        <div class="mb-3">
+            <label class="form-label">Payment Method</label><br>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked onclick="toggleUPI(false)">
+                <label class="form-check-label" for="cod">Cash on Delivery</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="payment_method" value="upi" id="upi" onclick="toggleUPI(true)">
+                <label class="form-check-label" for="upi">UPI</label>
+            </div>
+        </div>
+
+        <div id="upi-section" style="display:none;" class="mb-3 text-center">
+            <p>Scan this QR and pay ₹<span id="upi-amount">{{ product.price }}</span></p>
+            <img src="{% static 'shop/images/upi_qr.png' %}" alt="UPI QR" width="200">
+            <div class="mt-3">
+                <label class="form-label">Upload Payment Screenshot</label>
+                <input type="file" name="payment_screenshot" accept="image/*" class="form-control">
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-success">Confirm Order</button>
     </form>
 </div>
+
+<script>
+function toggleUPI(show) {
+    document.getElementById('upi-section').style.display = show ? 'block' : 'none';
+}
+</script>
 </body>
 </html>
