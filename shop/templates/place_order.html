@@ -17,7 +17,7 @@
 
         <div class="mb-3">
             <label>Quantity</label>
-            <input type="number" name="quantity" min="1" value="1" class="form-control" style="width:150px;" id="quantity">
+            <input type="number" name="quantity" min="1" value="1" class="form-control" style="width:150px;" id="quantity" onchange="updateTotal()" oninput="updateTotal()">
         </div>
 
         <div class="mb-3">
@@ -28,11 +28,11 @@
         <div class="mb-3">
             <label class="form-label">Payment Method</label><br>
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked onclick="toggleUPI(false)">
-                <label class="form-check-label" for="cod">Cash on Delivery</label>
+                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked onclick="updateTotal()">
+                <label class="form-check-label" for="cod">Cash on Delivery (+₹5 delivery charge)</label>
             </div>
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="payment_method" value="upi" id="upi" onclick="toggleUPI(true)">
+                <input class="form-check-input" type="radio" name="payment_method" value="upi" id="upi" onclick="updateTotal()">
                 <label class="form-check-label" for="upi">UPI</label>
             </div>
         </div>
@@ -46,13 +46,25 @@
             </div>
         </div>
 
+        <h4>Total: ₹<span id="total-amount">{{ product.price }}</span></h4>
+
         <button type="submit" class="btn btn-success">Confirm Order</button>
     </form>
 </div>
 
 <script>
-function toggleUPI(show) {
-    document.getElementById('upi-section').style.display = show ? 'block' : 'none';
+const price = {{ product.price }};
+const deliveryCharge = 5;
+
+function updateTotal() {
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const isCOD = document.getElementById('cod').checked;
+    const subtotal = price * quantity;
+    const total = isCOD ? subtotal + deliveryCharge : subtotal;
+
+    document.getElementById('total-amount').innerText = total.toFixed(2);
+    document.getElementById('upi-amount').innerText = subtotal.toFixed(2);
+    document.getElementById('upi-section').style.display = isCOD ? 'none' : 'block';
 }
 </script>
 </body>

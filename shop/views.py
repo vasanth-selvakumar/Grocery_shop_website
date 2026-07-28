@@ -1,4 +1,5 @@
 from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Product, Cart, CartItem, Order, Category
@@ -8,7 +9,7 @@ from .utils import send_order_notification, send_delivery_otp, send_delivery_ema
 def home(request):
     return render(request, 'home.html')
 
-class ProductListView(ListView):
+class ProductListView(LoginRequiredMixin, ListView):
     model = Product
     template_name = 'product_list.html'
     context_object_name = 'products'
@@ -42,13 +43,16 @@ def place_order(request, product_id):
                 'error': 'UPI screenshot compulsory'
             })
 
+        delivery_charge = 5 if payment_method == 'cod' else 0
+
         order = Order.objects.create(
             customer=request.user,
             product=product,
             quantity=quantity,
             address=address,
             payment_method=payment_method,
-            payment_screenshot=screenshot if payment_method == 'upi' else None
+            payment_screenshot=screenshot if payment_method == 'upi' else None,
+            delivery_charge=delivery_charge
         )
         send_order_notification(order)
         return redirect('order_success')
@@ -122,7 +126,9 @@ def checkout(request):
                 'error': 'UPI screenshot compulsory'
             })
 
-        for item in cart.items.all():
+        delivery_charge = 5 if payment_method == 'cod' else 0
+
+        for index, item in enumerate(cart.items.all()):
             order = Order.objects.create(
                 customer=request.user,
                 product=item.product,
@@ -130,13 +136,14 @@ def checkout(request):
                 address=address,
                 status='pending',
                 payment_method=payment_method,
-                payment_screenshot=screenshot if payment_method == 'upi' else None
+                payment_screenshot=screenshot if payment_method == 'upi' else None,
+                delivery_charge=delivery_charge if index == 0 else 0
             )
             send__order_notification(order)
         cart.items.all().delete()
         return render(request, 'order_success.html')
 
-    return render(request, 'checkout.html', {'cart': cart})   
+    return render(request, 'checkout.html', {'cart': cart})  
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render

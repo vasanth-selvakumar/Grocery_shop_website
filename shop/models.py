@@ -43,6 +43,7 @@ class Order(models.Model):
     payment_screenshot = models.ImageField(upload_to='payment_proofs/', null=True, blank=True)
     payment_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    delivery_charge = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 
 
     def generate_otp(self):

@@ -12,7 +12,9 @@ class CustomUserAdmin(UserAdmin):
     )
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'product', 'quantity', 'status', )
+    list_display = ('id', 'customer', 'product', 'quantity', 'status', 'payment_method', 'delivery_charge')
+
+       
 
     def save_model(self, request, obj, form, change):
         if change:
@@ -21,6 +23,7 @@ class OrderAdmin(admin.ModelAdmin):
                 obj.generate_otp()
                 send_delivery_otp(obj)
         super().save_model(request, obj, form, change)
+
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Category)
