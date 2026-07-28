@@ -1,14 +1,29 @@
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Product, Cart, CartItem, Order
-from .utils import send_order_notification
+from .models import Product, Cart, CartItem, Order, Category
+from .utils import send_order_notification, send_delivery_otp, send_delivery_email
 
+
+def home(request):
+    return render(request, 'home.html')
 
 class ProductListView(ListView):
     model = Product
     template_name = 'product_list.html'
     context_object_name = 'products'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category__name__iexact=category)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['selected_category'] = self.request.GET.get('category', '')
+        return context
 
 
 @login_required
@@ -63,20 +78,32 @@ def verify_delivery(request):
     message = ''
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
-        otp = request.POST.get('otp')
-        try:
-            order = Order.objects.get(id=order_id, status='out_for_delivery')
-            if order.delivery_otp == otp:
-                order.status = 'delivered'
-                order.delivery_otp = ''
-                order.save()
-                message = '✅ Delivery confirmed successfully!'
-            else:
-                message = '❌ Incorrect OTP. Try again.'
-        except Order.DoesNotExist:
-            message = '❌ Invalid Order ID or order not out for delivery.'
+        action = request.POST.get('action')
 
-    return render(request, 'verify_delivery.html', {'message': message})  
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            order = None
+            message = '❌ Invalid Order ID.'
+
+        if order:
+            if action == 'send_otp':
+                order.generate_otp()
+                send_delivery_otp(order)
+                message = f'✅ OTP sent to customer email for Order #{order_id}'
+
+            elif action == 'verify':
+                otp = request.POST.get('otp')
+                if order.delivery_otp == otp:
+                    order.status = 'delivered'
+                    order.delivery_otp = ''
+                    order.save()
+                    send_delivery_email(order)
+                    message = '✅ Delivery confirmed successfully!'
+                else:
+                    message = '❌ Incorrect OTP. Try again.'
+
+    return render(request, 'verify_delivery.html', {'message': message})
 
 @login_required
 def checkout(request):

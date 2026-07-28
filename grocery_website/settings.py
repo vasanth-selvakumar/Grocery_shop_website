@@ -130,8 +130,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
-TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER')
-SHOP_OWNER_WHATSAPP_NUMBER = os.getenv('SHOP_OWNER_WHATSAPP_NUMBER')
 
-ALLOWED_HOSTS = ['*']  # unga number
+
+ALLOWED_HOSTS = ['*'] 
+
+from decouple import config
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER # unga number
