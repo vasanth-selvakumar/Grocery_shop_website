@@ -3,23 +3,32 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Product, Cart, CartItem, Order, Category
-from .utils import send_order_notification, send_delivery_otp, send_delivery_email
+from .utils import send_order_notification, send_delivery_otp, send_delivery_email, send_order_email_notification
 
 
 def home(request):
     return render(request, 'home.html')
+
 
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
     template_name = 'product_list.html'
     context_object_name = 'products'
 
+   CATEGORY_GROUPS = {
+        'Groceries': ['Sugar', 'Urad Dal', 'Toor Dal', 'Kadalai Dal'],
+        'Oil': ['Groundnutoil', 'Refined Oil'],
+    }
+
     def get_queryset(self):
         queryset = super().get_queryset()
         category = self.request.GET.get('category')
         if category:
-            queryset = queryset.filter(category__name__iexact=category)
-        return queryset
+            if category in self.CATEGORY_GROUPS:
+                queryset = queryset.filter(category__name__in=self.CATEGORY_GROUPS[category])
+            else:
+                queryset = queryset.filter(category__name__iexact=category)
+        return queryset 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,14 +64,15 @@ def place_order(request, product_id):
             delivery_charge=delivery_charge
         )
         send_order_notification(order)
+        send_order_email_notification(order)
         return redirect('order_success')
 
     return render(request, 'place_order.html', {'product': product})
 
 
-
 def order_success(request):
     return render(request, 'order_success.html')
+
 
 from django.contrib.auth import login
 from .forms import CustomerSignUpForm
@@ -77,6 +87,7 @@ def signup_view(request):
     else:
         form = CustomerSignUpForm()
     return render(request, 'signup.html', {'form': form})
+
 
 def verify_delivery(request):
     message = ''
@@ -108,47 +119,6 @@ def verify_delivery(request):
                     message = '❌ Incorrect OTP. Try again.'
 
     return render(request, 'verify_delivery.html', {'message': message})
-
-@login_required
-def checkout(request):
-    cart, _ = Cart.objects.get_or_create(user=request.user)
-    if not cart.items.exists():
-        return redirect('view_cart')
-
-    if request.method == 'POST':
-        address = request.POST.get('address')
-        payment_method = request.POST.get('payment_method')
-        screenshot = request.FILES.get('payment_screenshot')
-
-        if payment_method == 'upi' and not screenshot:
-            return render(request, 'checkout.html', {
-                'cart': cart,
-                'error': 'UPI screenshot compulsory'
-            })
-
-        delivery_charge = 5 if payment_method == 'cod' else 0
-
-        for index, item in enumerate(cart.items.all()):
-            order = Order.objects.create(
-                customer=request.user,
-                product=item.product,
-                quantity=item.quantity,
-                address=address,
-                status='pending',
-                payment_method=payment_method,
-                payment_screenshot=screenshot if payment_method == 'upi' else None,
-                delivery_charge=delivery_charge if index == 0 else 0
-            )
-            send__order_notification(order)
-        cart.items.all().delete()
-        return render(request, 'order_success.html')
-
-    return render(request, 'checkout.html', {'cart': cart})  
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from .models import Product, Cart, CartItem, Order
-from .utils import send_order_notification
 
 
 @login_required
@@ -203,7 +173,9 @@ def checkout(request):
                 'error': 'UPI screenshot compulsory'
             })
 
-        for item in cart.items.all():
+        delivery_charge = 5 if payment_method == 'cod' else 0
+
+        for index, item in enumerate(cart.items.all()):
             order = Order.objects.create(
                 customer=request.user,
                 product=item.product,
@@ -211,10 +183,12 @@ def checkout(request):
                 address=address,
                 status='pending',
                 payment_method=payment_method,
-                payment_screenshot=screenshot if payment_method == 'upi' else None
+                payment_screenshot=screenshot if payment_method == 'upi' else None,
+                delivery_charge=delivery_charge if index == 0 else 0
             )
             send_order_notification(order)
+            send_order_email_notification(order)
         cart.items.all().delete()
         return render(request, 'order_success.html')
 
-    return render(request, 'checkout.html', {'cart': cart})    
+    return render(request, 'checkout.html', {'cart': cart})
