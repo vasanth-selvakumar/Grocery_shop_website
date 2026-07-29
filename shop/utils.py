@@ -19,7 +19,7 @@ def send_order_email_notification(order):
                 <li>Product: {order.product.name}</li>
                 <li>Quantity: {order.quantity}</li>
                 <li>Address: {order.address}</li>
-                <li>Payment: {order.payment_method}</li>
+                <li>Payment: {order.get_payment_method_display()}</li>
                 <li>Delivery charge: ₹{order.delivery_charge}</li>
             </ul>
         """
@@ -44,6 +44,7 @@ def send_order_notification(order):
         f"Mobile: {order.customer.mobile_number}\n"
         f"Product: {order.product.name} (Qty: {order.quantity})\n"
         f"Price: ₹{order.product.price} x {order.quantity} = ₹{total_price}\n"
+        f"Payment Method: {order.get_payment_method_display()}\n"
         f"Address: {order.address}"
     )
 
