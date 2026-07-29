@@ -15,24 +15,14 @@ class ProductListView(LoginRequiredMixin, ListView):
     template_name = 'product_list.html'
     context_object_name = 'products'
 
-    CATEGORY_GROUPS = {
-        'Groceries': ['Sugar', 'Urad Dal', 'Toor Dal', 'Kadalai Dal', 'Pasiparuupu', 'Soyabeans', 'Seeragam', 'Egg', 'Yippee', 'Maggiee'],
-        'Oil': ['Groundnutoil', 'Refined Oil', 'GoldWinner', 'CastorOil', 'SesameOil'],
-    }
-
     def get_queryset(self):
         queryset = super().get_queryset()
         category = self.request.GET.get('category')
         if category:
-            if category in self.CATEGORY_GROUPS:
-                queryset = queryset.filter(category__name__in=self.CATEGORY_GROUPS[category])
-            else:
-                queryset = queryset.filter(category__name__iexact=category)
+            queryset = queryset.filter(category__name__iexact=category)
         return queryset
-
-
         
-
+        
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['selected_category'] = self.request.GET.get('category', '')
