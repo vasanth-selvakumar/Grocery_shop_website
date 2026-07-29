@@ -1,4 +1,34 @@
-# shop/utils.py
+import requests
+from django.conf import settings
+
+def send_order_email_notification(order):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": settings.BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    data = {
+        "sender": {"name": "Vasanth Store", "email": "selvakumarvasanth80@gmail.com"},
+        "to": [{"email": "OWNER_EMAIL_HERE@gmail.com"}],
+        "subject": "New Order Received",
+        "htmlContent": f"""
+            <p>New order received:</p>
+            <ul>
+                <li>Customer: {order.customer.get_full_name() or order.customer.username}</li>
+                <li>Product: {order.product.name}</li>
+                <li>Quantity: {order.quantity}</li>
+                <li>Address: {order.address}</li>
+                <li>Payment: {order.payment_method}</li>
+                <li>Delivery charge: ₹{order.delivery_charge}</li>
+            </ul>
+        """
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        return response.status_code
+    except Exception as e:
+        print(f"Email send failed: {e}")# shop/utils.py
 
 from django.core.mail import send_mail
 from django.conf import settings
