@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Welcome, {{ user.first_name }} {{ user.last_name }} ({{ user.mobile_number }})</h2>
+    <h4 class="mt-3">My Orders</h4>
+
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.product.name }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ order.get_status_display }}</td>
+                <td>{{ order.created_at|date:"d M Y, h:i A" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No orders yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

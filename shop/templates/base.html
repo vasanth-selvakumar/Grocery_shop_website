@@ -13,6 +13,7 @@
         <div>
             {% if user.is_staff or user.is_superuser %}
             <a href="{% url 'owner_dashboard' %}" class="btn btn-outline-warning me-2">📋 Dashboard</a>
+            <a href="{% url 'my_orders' %}" class="btn btn-outline-light me-2">📦 My Orders</a>
             {% endif %}
             <a href="{% url 'view_cart' %}" class="btn btn-outline-light">🛒 Cart</a>
         </div>

@@ -234,4 +234,9 @@ def owner_dashboard(request):
                 else:
                     message = '❌ Incorrect OTP. Try again.'
     orders = Order.objects.all().order_by('-created_at')
-    return render(request, 'owner_dashboard.html', {'orders': orders, 'message': message}) 
+    return render(request, 'owner_dashboard.html', {'orders': orders, 'message': message})
+
+    @login_required
+def my_orders(request):
+    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    return render(request, 'my_orders.html', {'orders': orders}) 
