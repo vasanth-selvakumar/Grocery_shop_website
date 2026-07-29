@@ -15,9 +15,9 @@ class ProductListView(LoginRequiredMixin, ListView):
     template_name = 'product_list.html'
     context_object_name = 'products'
 
-   CATEGORY_GROUPS = {
-        'Groceries': ['Sugar', 'Urad Dal', 'Toor Dal', 'Kadalai Dal'],
-        'Oil': ['Groundnutoil', 'Refined Oil'],
+    CATEGORY_GROUPS = {
+        'Groceries': ['Sugar', 'Urad Dal', 'Toor Dal', 'Kadalai Dal', 'Pasiparuupu', 'Soyabeans', 'Seeragam', 'Egg', 'Yippee', 'Maggiee'],
+        'Oil': ['Groundnutoil', 'Refined Oil', 'GoldWinner', 'CastorOil', 'SesameOil'],
     }
 
     def get_queryset(self):
@@ -28,7 +28,10 @@ class ProductListView(LoginRequiredMixin, ListView):
                 queryset = queryset.filter(category__name__in=self.CATEGORY_GROUPS[category])
             else:
                 queryset = queryset.filter(category__name__iexact=category)
-        return queryset 
+        return queryset
+
+
+        
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
