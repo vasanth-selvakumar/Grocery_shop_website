@@ -10,7 +10,12 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
         <a class="navbar-brand" href="{% url 'home' %}">Vasanth Store</a>
-        <a href="{% url 'view_cart' %}" class="btn btn-outline-light">🛒 Cart</a>
+        <div>
+            {% if user.is_staff or user.is_superuser %}
+            <a href="{% url 'owner_dashboard' %}" class="btn btn-outline-warning me-2">📋 Dashboard</a>
+            {% endif %}
+            <a href="{% url 'view_cart' %}" class="btn btn-outline-light">🛒 Cart</a>
+        </div>
       </div>
     </nav>
 
