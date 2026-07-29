@@ -14,6 +14,7 @@
                 <th>Customer</th>
                 <th>Product</th>
                 <th>Qty</th>
+                <th>Payment</th>
                 <th>Status</th>
                 <th>Update Status</th>
                 <th>Verify OTP</th>
@@ -26,6 +27,12 @@
                 <td>{{ order.customer }}</td>
                 <td>{{ order.product.name }}</td>
                 <td>{{ order.quantity }}</td>
+                <td>
+                    {{ order.get_payment_method_display }}
+                    {% if order.payment_method == 'upi' and order.payment_screenshot %}
+                        <br><a href="{{ order.payment_screenshot.url }}" target="_blank">View Screenshot</a>
+                    {% endif %}
+                </td>
                 <td>{{ order.get_status_display }}</td>
                 <td>
                     <form method="post" class="d-flex">
