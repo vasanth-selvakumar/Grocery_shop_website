@@ -234,4 +234,4 @@ def owner_dashboard(request):
                 else:
                     message = '❌ Incorrect OTP. Try again.'
     orders = Order.objects.all().order_by('-created_at')
-    return render(request, 'owner_dashboard.html', {'orders': orders, 'message': message}) itha enga add panrathu starting laya illa ending laya
+    return render(request, 'owner_dashboard.html', {'orders': orders, 'message': message}) 
