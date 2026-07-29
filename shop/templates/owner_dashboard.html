@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Owner Dashboard</h2>
+
+    {% if message %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Status</th>
+                <th>Update Status</th>
+                <th>Verify OTP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.customer }}</td>
+                <td>{{ order.product.name }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ order.get_status_display }}</td>
+                <td>
+                    <form method="post" class="d-flex">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <select name="status" class="form-select form-select-sm me-1">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                            <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+                            <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                    </form>
+                </td>
+                <td>
+                    {% if order.status == 'out_for_delivery' %}
+                    <form method="post" class="d-flex">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="verify_otp">
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <input type="text" name="otp" placeholder="OTP" class="form-control form-control-sm me-1" style="width:80px;">
+                        <button type="submit" class="btn btn-sm btn-success">Verify</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -195,3 +195,43 @@ def checkout(request):
         return render(request, 'order_success.html')
 
     return render(request, 'checkout.html', {'cart': cart})
+
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+def is_owner(user):
+    return user.is_staff or user.is_superuser
+@login_required
+@user_passes_test(is_owner)
+def owner_dashboard(request):
+    message = ''
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        order_id = request.POST.get('order_id')
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            order = None
+            message = '❌ Invalid Order ID.'
+        if order:
+            if action == 'update_status':
+                new_status = request.POST.get('status')
+                order.status = new_status
+                order.save()
+                if new_status == 'out_for_delivery':
+                    order.generate_otp()
+                    send_delivery_otp(order)
+                    message = f'✅ Status updated & OTP sent for Order #{order.id}'
+                else:
+                    message = f'✅ Status updated to {new_status} for Order #{order.id}'
+            elif action == 'verify_otp':
+                otp = request.POST.get('otp')
+                if order.delivery_otp == otp:
+                    order.status = 'delivered'
+                    order.delivery_otp = ''
+                    order.save()
+                    send_delivery_email(order)
+                    message = f'✅ Order #{order.id} marked as delivered!'
+                else:
+                    message = '❌ Incorrect OTP. Try again.'
+    orders = Order.objects.all().order_by('-created_at')
+    return render(request, 'owner_dashboard.html', {'orders': orders, 'message': message}) itha enga add panrathu starting laya illa ending laya
