@@ -56,8 +56,13 @@ def place_order(request, product_id):
             payment_screenshot=screenshot if payment_method == 'upi' else None,
             delivery_charge=delivery_charge
         )
+
         send_order_notification(order)
-        send_order_email_notification(order)
+        try:
+            send_order_email_notification(order)
+        except Exception as e:
+            print(f"Email notification failed: {e}")
+     
         return redirect('order_success')
 
     return render(request, 'place_order.html', {'product': product})
@@ -179,8 +184,13 @@ def checkout(request):
                 payment_screenshot=screenshot if payment_method == 'upi' else None,
                 delivery_charge=delivery_charge if index == 0 else 0
             )
+
             send_order_notification(order)
+        try:
             send_order_email_notification(order)
+        except Exception as e:
+            print(f"Email notification failed: {e}")
+            
         cart.items.all().delete()
         return render(request, 'order_success.html')
 
