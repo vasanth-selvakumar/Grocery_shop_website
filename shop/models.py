@@ -26,7 +26,7 @@ from django.contrib.auth import get_user_model
 class Order(models.Model):
     PAYMENT_CHOICES = [
         ('cod', 'Cash on Delivery'),
-        ('upi', 'UPI'),
+        
     ]
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -40,8 +40,6 @@ class Order(models.Model):
     address = models.TextField()
     delivery_otp = models.CharField(max_length=6, blank=True, null=True)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='cod')
-    payment_screenshot = models.ImageField(upload_to='payment_proofs/', null=True, blank=True)
-    payment_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     delivery_charge = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 

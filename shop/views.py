@@ -36,25 +36,14 @@ def place_order(request, product_id):
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity'))
         address = request.POST.get('address')
-        payment_method = request.POST.get('payment_method')
-        screenshot = request.FILES.get('payment_screenshot')
-
-        if payment_method == 'upi' and not screenshot:
-            return render(request, 'place_order.html', {
-                'product': product,
-                'error': 'UPI screenshot compulsory'
-            })
-
-        delivery_charge = 5 if payment_method == 'cod' else 0
 
         order = Order.objects.create(
             customer=request.user,
             product=product,
             quantity=quantity,
             address=address,
-            payment_method=payment_method,
-            payment_screenshot=screenshot if payment_method == 'upi' else None,
-            delivery_charge=delivery_charge
+            payment_method='cod',
+            delivery_charge=5
         )
 
         send_order_notification(order)
@@ -62,7 +51,7 @@ def place_order(request, product_id):
             send_order_email_notification(order)
         except Exception as e:
             print(f"Email notification failed: {e}")
-     
+
         return redirect('order_success')
 
     return render(request, 'place_order.html', {'product': product})
