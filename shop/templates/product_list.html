@@ -28,9 +28,11 @@
             <td>{{ product.category.name }}</td>
             <td>₹{{ product.price }}</td>
             <td>
-                <a href="{% url 'place_order' product.id %}" class="btn btn-sm btn-success">Order Now</a>
-                <a href="{% url 'add_to_cart' product.id %}" class="btn btn-primary btn-sm">Add to Cart</a>
-            </td>
+    <div class="d-flex gap-1">
+        <a href="{% url 'place_order' product.id %}" class="btn btn-sm btn-success">Order Now</a>
+        <a href="{% url 'add_to_cart' product.id %}" class="btn btn-primary btn-sm">Add to Cart</a>
+    </div>
+</td> 
         </tr>
         {% empty %}
         <tr><td colspan="4">No products yet.</td></tr>
