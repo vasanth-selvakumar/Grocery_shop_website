@@ -12,7 +12,7 @@
 
     {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 
-    <form method="post" enctype="multipart/form-data">
+    <form method="post">
         {% csrf_token %}
 
         <div class="mb-3">
@@ -28,21 +28,8 @@
         <div class="mb-3">
             <label class="form-label">Payment Method</label><br>
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked onclick="updateTotal()">
+                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
                 <label class="form-check-label" for="cod">Cash on Delivery (+₹5 delivery charge)</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="payment_method" value="upi" id="upi" onclick="updateTotal()">
-                <label class="form-check-label" for="upi">UPI</label>
-            </div>
-        </div>
-
-        <div id="upi-section" style="display:none;" class="mb-3 text-center">
-            <p>Scan this QR and pay ₹<span id="upi-amount">{{ product.price }}</span></p>
-            <img src="{% static 'shop/images/upi_qr.png' %}" alt="UPI QR" width="200">
-            <div class="mt-3">
-                <label class="form-label">Upload Payment Screenshot</label>
-                <input type="file" name="payment_screenshot" accept="image/*" class="form-control">
             </div>
         </div>
 
@@ -58,13 +45,8 @@ const deliveryCharge = 5;
 
 function updateTotal() {
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
-    const isCOD = document.getElementById('cod').checked;
-    const subtotal = price * quantity;
-    const total = isCOD ? subtotal + deliveryCharge : subtotal;
-
+    const total = (price * quantity) + deliveryCharge;
     document.getElementById('total-amount').innerText = total.toFixed(2);
-    document.getElementById('upi-amount').innerText = subtotal.toFixed(2);
-    document.getElementById('upi-section').style.display = isCOD ? 'none' : 'block';
 }
 </script>
 </body>
