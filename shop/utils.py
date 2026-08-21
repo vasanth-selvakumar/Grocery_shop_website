@@ -41,7 +41,6 @@ def send_order_notification(order):
     message = (
         f"New Order!\n"
         f"Customer: {order.customer.get_full_name() or order.customer.username}\n"
-        f"Mobile: {order.customer.mobile_number}\n"
         f"Product: {order.product.name} (Qty: {order.quantity})\n"
         f"Price: ₹{order.product.price} x {order.quantity} = ₹{total_price}\n"
         f"Payment Method: {order.get_payment_method_display()}\n"

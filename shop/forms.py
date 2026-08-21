@@ -5,7 +5,6 @@ from .models import CustomUser
 class CustomerSignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
-    email = forms.EmailField(required=True)
     mobile_number = forms.CharField(max_length=15, required=True)
 
     class Meta:
