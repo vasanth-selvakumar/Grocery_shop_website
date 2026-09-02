@@ -1,16 +1,24 @@
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import login
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Product, Cart, CartItem, Order, Category
-from .utils import send_order_notification, send_delivery_otp, send_delivery_email, send_order_email_notification
+from .forms import CustomerSignUpForm
+from .utils import (
+    send_order_notification,
+    send_delivery_otp,
+    send_delivery_email,
+    send_order_email_notification,
+    get_or_create_cart,
+)
 
 
 def home(request):
     return render(request, 'home.html')
 
 
-class ProductListView(LoginRequiredMixin, ListView):
+class ProductListView(ListView):
     model = Product
     template_name = 'product_list.html'
     context_object_name = 'products'
@@ -19,10 +27,9 @@ class ProductListView(LoginRequiredMixin, ListView):
         queryset = super().get_queryset()
         category = self.request.GET.get('category')
         if category:
-            queryset = queryset.filter(category__name__iexact=category)
+            queryset = queryset.filter(category__iexact=category)
         return queryset
-        
-        
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['selected_category'] = self.request.GET.get('category', '')
@@ -60,9 +67,6 @@ def place_order(request, product_id):
 def order_success(request):
     return render(request, 'order_success.html')
 
-
-from django.contrib.auth import login
-from .forms import CustomerSignUpForm
 
 def signup_view(request):
     if request.method == 'POST':
@@ -108,10 +112,9 @@ def verify_delivery(request):
     return render(request, 'verify_delivery.html', {'message': message})
 
 
-@login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart = get_or_create_cart(request)
     item, created = CartItem.objects.get_or_create(cart=cart, product=product)
     if not created:
         item.quantity += 1
@@ -119,15 +122,27 @@ def add_to_cart(request, product_id):
     return redirect('view_cart')
 
 
-@login_required
+def add_selected_to_cart(request):
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_products')
+        cart = get_or_create_cart(request)
+        for product_id in selected_ids:
+            product = get_object_or_404(Product, id=product_id)
+            item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+            if not created:
+                item.quantity += 1
+                item.save()
+    return redirect('product_list')
+
+
 def view_cart(request):
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart = get_or_create_cart(request)
     return render(request, 'cart.html', {'cart': cart})
 
 
-@login_required
 def update_cart_item(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    cart = get_or_create_cart(request)
+    item = get_object_or_404(CartItem, id=item_id, cart=cart)
     action = request.POST.get('action')
     if action == 'increase':
         item.quantity += 1
@@ -145,22 +160,12 @@ def update_cart_item(request, item_id):
 
 @login_required
 def checkout(request):
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart = get_or_create_cart(request)
     if not cart.items.exists():
         return redirect('view_cart')
 
     if request.method == 'POST':
         address = request.POST.get('address')
-        payment_method = request.POST.get('payment_method')
-        screenshot = request.FILES.get('payment_screenshot')
-
-        if payment_method == 'upi' and not screenshot:
-            return render(request, 'checkout.html', {
-                'cart': cart,
-                'error': 'UPI screenshot compulsory'
-            })
-
-        delivery_charge = 5 if payment_method == 'cod' else 0
 
         for index, item in enumerate(cart.items.all()):
             order = Order.objects.create(
@@ -169,26 +174,26 @@ def checkout(request):
                 quantity=item.quantity,
                 address=address,
                 status='pending',
-                payment_method=payment_method,
-                payment_screenshot=screenshot if payment_method == 'upi' else None,
-                delivery_charge=delivery_charge if index == 0 else 0
+                payment_method='cod',
+                delivery_charge=5 if index == 0 else 0
             )
 
             send_order_notification(order)
-        try:
-            send_order_email_notification(order)
-        except Exception as e:
-            print(f"Email notification failed: {e}")
-            
+            try:
+                send_order_email_notification(order)
+            except Exception as e:
+                print(f"Email notification failed: {e}")
+
         cart.items.all().delete()
         return render(request, 'order_success.html')
 
     return render(request, 'checkout.html', {'cart': cart})
 
 
-from django.contrib.auth.decorators import login_required, user_passes_test
 def is_owner(user):
     return user.is_staff or user.is_superuser
+
+
 @login_required
 @user_passes_test(is_owner)
 def owner_dashboard(request):

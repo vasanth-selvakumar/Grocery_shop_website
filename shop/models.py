@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 import random
 
+
 class CustomUser(AbstractUser):
     mobile_number = models.CharField(max_length=15, unique=True)
 
@@ -14,19 +15,15 @@ class Category(models.Model):
 
 
 class Product(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=8, decimal_places=2)
-   
+    image = models.ImageField(upload_to='products/', blank=True, null=True)
 
-    def __str__(self):
-        return self.name
 
-from django.contrib.auth import get_user_model
 class Order(models.Model):
     PAYMENT_CHOICES = [
         ('cod', 'Cash on Delivery'),
-        
     ]
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -43,17 +40,17 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     delivery_charge = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 
-
     def generate_otp(self):
         self.delivery_otp = str(random.randint(1000, 9999))
         self.save()
 
     def __str__(self):
-        return f"{self.customer} - {self.product.name} ({self.quantity})"  
+        return f"{self.customer} - {self.product.name} ({self.quantity})"
 
 
 class Cart(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='cart')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True, related_name='carts')
+    session_key = models.CharField(max_length=40, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def total_price(self):
@@ -72,10 +69,6 @@ class CartItem(models.Model):
         unique_together = ('cart', 'product')
 
     def subtotal(self):
-        return self.product.price * self.quantity 
-
-                     
-
-
+        return self.product.price * self.quantity
 
 # Create your models here.

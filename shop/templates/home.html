@@ -3,14 +3,867 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Vasanth Store</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #ffffff;
+            color: #17153b;
+            overflow-x: hidden;
+        }
+
+        /* ================= NAVBAR ================= */
+
+        .navbar {
+            min-height: 88px;
+            padding: 15px 5%;
+            background: rgba(255,255,255,0.96);
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #5b20ff,
+                #c42cff,
+                #ff8a00
+            );
+
+            color: white;
+            box-shadow: 0 10px 25px rgba(105, 45, 255, 0.25);
+        }
+
+        .brand-icon i {
+            font-size: 25px;
+        }
+
+        .brand-name {
+            font-size: 23px;
+            font-weight: 800;
+            color: #2817bb;
+            line-height: 1;
+        }
+
+        .brand-name span {
+            font-weight: 400;
+            color: #482be0;
+        }
+
+        .tagline {
+            font-size: 11px;
+            color: #596078;
+            margin-top: 5px;
+        }
+
+        .nav-link {
+            color: #25214b !important;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0 10px;
+            transition: .3s;
+        }
+
+        .nav-link:hover,
+        .active-link {
+            color: #5724ee !important;
+        }
+
+        .active-link {
+            position: relative;
+        }
+
+        .active-link::after {
+            content: "";
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: -8px;
+            height: 3px;
+            border-radius: 5px;
+            background: #5925ed;
+        }
+
+       
+
+        /* ================= HERO ================= */
+
+        .hero {
+            min-height: 600px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 12% 20%,
+                    rgba(100, 66, 255, .13),
+                    transparent 25%
+                ),
+                radial-gradient(
+                    circle at 90% 25%,
+                    rgba(255, 189, 30, .18),
+                    transparent 27%
+                ),
+                linear-gradient(
+                    135deg,
+                    #f5f4ff,
+                    #ffffff 48%,
+                    #fffaf0
+                );
+        }
+
+        /* decorative shapes */
+
+        .shape-left {
+            position: absolute;
+            left: -130px;
+            top: 130px;
+            width: 350px;
+            height: 330px;
+            background: #6337ff;
+            border-radius: 0 55% 55% 0;
+            transform: rotate(-8deg);
+            opacity: .95;
+        }
+
+        .shape-left-bottom {
+            position: absolute;
+            left: -80px;
+            bottom: -100px;
+            width: 390px;
+            height: 190px;
+            background: #ffad16;
+            border-radius: 50%;
+        }
+
+        .shape-right {
+            position: absolute;
+            right: -130px;
+            top: 90px;
+            width: 390px;
+            height: 380px;
+            background: #ffd44d;
+            border-radius: 55% 0 0 55%;
+            transform: rotate(-10deg);
+        }
+
+        .shape-right-bottom {
+            position: absolute;
+            right: -100px;
+            bottom: -100px;
+            width: 430px;
+            height: 180px;
+            background: linear-gradient(
+                90deg,
+                #5b25ff,
+                #df2fb3
+            );
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            width: 100%;
+            max-width: 950px;
+            position: relative;
+            z-index: 3;
+            padding: 50px 20px 30px;
+        }
+
+        /* ================= HERO ICON ================= */
+
+        .hero-icon {
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #4d19ff,
+                #c127e8,
+                #ff8b00
+            );
+
+            color: white;
+            box-shadow:
+                0 15px 35px rgba(93, 37, 245, .25);
+        }
+
+        .hero-icon i {
+            font-size: 43px;
+        }
+
+        .welcome {
+            font-size: 27px;
+            font-style: italic;
+            font-weight: 500;
+            color: #271e91;
+            margin-bottom: 3px;
+        }
+
+        /* ================= TITLE ================= */
+
+        .hero-title {
+            font-size: clamp(42px, 6vw, 70px);
+            line-height: 1.03;
+            font-weight: 800;
+            margin-bottom: 16px;
+
+            background: linear-gradient(
+                90deg,
+                #3321df,
+                #8122dc,
+                #f04743,
+                #ff8b00
+            );
+
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            max-width: 650px;
+            margin: auto;
+
+            color: #4e5671;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* ================= SHOP BUTTON ================= */
+
+        .shop-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 11px;
+
+            margin-top: 22px;
+            padding: 14px 34px;
+
+            border-radius: 40px;
+            text-decoration: none;
+
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+
+            background: linear-gradient(
+                90deg,
+                #4e20ef,
+                #bf25db
+            );
+
+            box-shadow:
+                0 12px 30px rgba(90, 35, 230, .28);
+
+            transition: .3s;
+        }
+
+        .shop-btn:hover {
+            color: white;
+            transform: translateY(-4px);
+            box-shadow:
+                0 17px 35px rgba(90, 35, 230, .38);
+        }
+
+        /* ================= FEATURES ================= */
+
+        .features {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 35px;
+        }
+
+        .feature {
+            min-width: 220px;
+            padding: 7px 28px;
+
+            display: flex;
+            align-items: center;
+            gap: 13px;
+
+            text-align: left;
+            border-right: 1px solid #d9d9e8;
+        }
+
+        .feature:last-child {
+            border-right: none;
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            min-width: 50px;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #e8e5ff,
+                #ffffff
+            );
+
+            border: 1px solid #ddd8ff;
+        }
+
+        .feature:nth-child(1) .feature-icon {
+            color: #274ee8;
+        }
+
+        .feature:nth-child(2) .feature-icon {
+            color: #b22bdd;
+        }
+
+        .feature:nth-child(3) .feature-icon {
+            color: #0aaf58;
+        }
+
+        .feature-icon i {
+            font-size: 22px;
+        }
+
+        .feature h5 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #292650;
+            margin-bottom: 2px;
+        }
+
+        .feature p {
+            font-size: 11px;
+            color: #72758b;
+            margin: 0;
+        }
+
+        /* ================= FOOTER ================= */
+
+        footer {
+            position: relative;
+            overflow: hidden;
+
+            padding: 28px 5% 14px;
+
+            color: white;
+
+            background:
+                linear-gradient(
+                    110deg,
+                    #151d9d,
+                    #5720dc,
+                    #a52acb,
+                    #df2698
+                );
+        }
+
+        footer::after {
+            content: "";
+            position: absolute;
+            right: -100px;
+            bottom: -130px;
+
+            width: 500px;
+            height: 230px;
+
+            border-radius: 50%;
+
+            background: rgba(255,255,255,.08);
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .footer-title span {
+            font-weight: 400;
+        }
+
+        .footer-text {
+            color: rgba(255,255,255,.82);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .footer-heading {
+            color: #ffd83d;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 11px;
+        }
+
+        .contact-item {
+            color: rgba(255,255,255,.9);
+            font-size: 11px;
+            margin-bottom: 7px;
+        }
+
+        .contact-item i {
+            color: #ffd83d;
+            margin-right: 7px;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 9px;
+        }
+
+        .social {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: white;
+            text-decoration: none;
+
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.25);
+
+            transition: .3s;
+        }
+
+        .social:hover {
+            background: white;
+            color: #5624db;
+            transform: translateY(-4px);
+        }
+
+        .copyright {
+            position: relative;
+            z-index: 2;
+
+            border-top: 1px solid rgba(255,255,255,.2);
+            margin-top: 18px;
+            padding-top: 10px;
+
+            text-align: center;
+            font-size: 10px;
+            color: rgba(255,255,255,.75);
+        }
+
+        /* ================= MOBILE ================= */
+
+        @media (max-width: 768px) {
+
+            .navbar {
+                padding: 12px 20px;
+            }
+
+            .nav-link {
+                margin: 7px 0;
+            }
+
+            .active-link::after {
+                display: none;
+            }
+
+            .hero {
+                min-height: auto;
+            }
+
+            .hero-content {
+                padding: 45px 15px;
+            }
+
+            .shape-left,
+            .shape-right {
+                opacity: .35;
+            }
+
+            .hero-title {
+                font-size: 43px;
+            }
+
+            .welcome {
+                font-size: 22px;
+            }
+
+            .hero-description {
+                font-size: 14px;
+            }
+
+            .features {
+                display: block;
+                margin-top: 28px;
+            }
+
+            .feature {
+                border-right: none;
+                justify-content: center;
+                max-width: 270px;
+                margin: 12px auto;
+            }
+
+            footer {
+                padding: 30px 20px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .brand-name {
+                font-size: 19px;
+            }
+
+            .brand-icon {
+                width: 45px;
+                height: 45px;
+            }
+
+            .hero-icon {
+                width: 75px;
+                height: 75px;
+            }
+
+            .hero-icon i {
+                font-size: 34px;
+            }
+
+            .hero-title {
+                font-size: 38px;
+            }
+
+            .shop-btn {
+                padding: 12px 28px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <div class="text-center" style="padding-top: 150px;">
-        <h1 class="display-4">Welcome to Vasanth Store</h1>
-        <p class="lead text-muted mt-3">Fresh groceries, snacks, juices, stationery & more — delivered to your doorstep.</p>
-        <a href="{% url 'product_list' %}" class="btn btn-success btn-lg mt-4">Shop Now</a>
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+
+        <a href="{% url 'home' %}" class="brand">
+
+            <div class="brand-icon">
+                <i class="bi bi-bag"></i>
+            </div>
+
+            <div>
+                <div class="brand-name">
+                    Vasanth <span>Store</span>
+                </div>
+
+                <div class="tagline">
+                    Your Daily Needs, Delivered
+                </div>
+            </div>
+
+        </a>
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-end"
+             id="navbarNav">
+
+            <ul class="navbar-nav align-items-center">
+
+                <li class="nav-item">
+                    <a class="nav-link active-link"
+                       href="{% url 'home' %}">
+                        Home
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link"
+                       href="{% url 'product_list' %}">
+                        Products
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        Categories
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        About
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#contact">
+                        Contact
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#" class="cart">
+                        <i class="bi bi-cart3"></i>
+                        <span class="cart-badge">0</span>
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+
     </div>
+</nav>
+
+
+<!-- ================= HERO ================= -->
+
+<section class="hero">
+
+    <!-- Decorative shapes -->
+    <div class="shape-left"></div>
+    <div class="shape-left-bottom"></div>
+
+    <div class="shape-right"></div>
+    <div class="shape-right-bottom"></div>
+
+    <div class="hero-content">
+
+        <div class="hero-icon">
+            <i class="bi bi-cart3"></i>
+        </div>
+
+        <div class="welcome">
+            Welcome to
+        </div>
+
+        <h1 class="hero-title">
+            Vasanth<br>
+            Department Store
+        </h1>
+
+        <p class="hero-description">
+            Fresh groceries, snacks, juices, stationery & more —
+            <br>
+            delivered to your doorstep.
+        </p>
+
+        <a href="{% url 'product_list' %}"
+           class="shop-btn">
+
+            <i class="bi bi-bag"></i>
+            Shop Now
+            <i class="bi bi-arrow-right"></i>
+
+        </a>
+
+
+        <!-- FEATURES -->
+
+        <div class="features">
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    <i class="bi bi-truck"></i>
+                </div>
+
+                <div>
+                    <h5>Fast Delivery</h5>
+                    <p>At your doorstep</p>
+                </div>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    <i class="bi bi-tags"></i>
+                </div>
+
+                <div>
+                    <h5>Best Offers</h5>
+                    <p>Great savings</p>
+                </div>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+
+                <div>
+                    <h5>100% Quality</h5>
+                    <p>Trusted products</p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer id="contact">
+
+    <div class="footer-content">
+
+        <div class="row g-4">
+
+            <!-- STORE -->
+
+            <div class="col-lg-5">
+
+                <h3 class="footer-title">
+                    Vasanth <span>Store</span>
+                </h3>
+
+                <p class="footer-text mt-2">
+                    Your Daily Needs, Delivered
+                    <br><br>
+                    Fresh groceries, snacks, juices,
+                    stationery & more — delivered to
+                    your doorstep.
+                </p>
+
+            </div>
+
+
+            <!-- CONTACT -->
+
+            <div class="col-lg-4">
+
+                <h4 class="footer-heading">
+                    Contact Us
+                </h4>
+
+                <div class="contact-item">
+                    <i class="bi bi-telephone"></i>
+                    +91 8015180625
+                </div>
+
+                <div class="contact-item">
+                    <i class="bi bi-envelope"></i>
+                    selvakumarvasanth80@gmail.com
+                </div>
+
+                <div class="contact-item">
+                    <i class="bi bi-geo-alt"></i>
+                    Sittilarai, Tamil Nadu, India
+                </div>
+
+            </div>
+
+
+            <!-- SOCIAL -->
+
+            <div class="col-lg-3">
+
+                <h4 class="footer-heading">
+                    Follow Us
+                </h4>
+
+                <div class="social-icons">
+
+                    <a href="#" class="social">
+                        <i class="bi bi-facebook"></i>
+                    </a>
+
+                    <a href="#" class="social">
+                        <i class="bi bi-instagram"></i>
+                    </a>
+
+                    <a href="#" class="social">
+                        <i class="bi bi-whatsapp"></i>
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="copyright">
+            © 2026 Vasanth Store. All rights reserved.
+        </div>
+
+    </div>
+
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

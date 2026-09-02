@@ -15,7 +15,15 @@
     <tbody>
       {% for item in cart.items.all %}
       <tr>
-        <td>{{ item.product.name }}</td>
+        <td class="d-flex align-items-center">
+          {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                 width="50" height="50" style="object-fit: cover; border-radius:6px; margin-right:8px;">
+          {% else %}
+            <div style="width:50px;height:50px;background:#eee;border-radius:6px;margin-right:8px;"></div>
+          {% endif %}
+          {{ item.product.name }}
+        </td>
         <td>₹{{ item.product.price }}</td>
         <td>
           <form method="post" action="{% url 'update_cart_item' item.id %}" class="d-flex align-items-center">
@@ -38,7 +46,6 @@
       {% endfor %}
     </tbody>
   </table>
-
   {% if cart.items.all %}
   <h4>Total: ₹{{ cart.total_price }}</h4>
   <a href="{% url 'checkout' %}" class="btn btn-success">Checkout</a>

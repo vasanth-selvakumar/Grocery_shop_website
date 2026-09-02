@@ -1,37 +1,20 @@
+# shop/utils.py
+
 import requests
-from django.conf import settings
-
-def send_order_email_notification(order):
-    url = "https://api.brevo.com/v3/smtp/email"
-    headers = {
-        "accept": "application/json",
-        "api-key": settings.BREVO_API_KEY,
-        "content-type": "application/json"
-    }
-    data = {
-        "sender": {"name": "Vasanth Store", "email": "selvakumarvasanth80@gmail.com"},
-        "to": [{"email": "OWNER_EMAIL_HERE@gmail.com"}],
-        "subject": "New Order Received",
-        "htmlContent": f"""
-            <p>New order received:</p>
-            <ul>
-                <li>Customer: {order.customer.get_full_name() or order.customer.username}</li>
-                <li>Product: {order.product.name}</li>
-                <li>Quantity: {order.quantity}</li>
-                <li>Address: {order.address}</li>
-                <li>Payment: {order.get_payment_method_display()}</li>
-                <li>Delivery charge: ₹{order.delivery_charge}</li>
-            </ul>
-        """
-    }
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        return response.status_code
-    except Exception as e:
-        print(f"Email send failed: {e}")# shop/utils.py
-
 from django.core.mail import send_mail
 from django.conf import settings
+from .models import Cart
+
+
+def get_or_create_cart(request):
+    if request.user.is_authenticated:
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+    else:
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+        cart, _ = Cart.objects.get_or_create(session_key=session_key, user=None)
+    return cart
 
 
 def send_order_notification(order):
@@ -41,6 +24,7 @@ def send_order_notification(order):
     message = (
         f"New Order!\n"
         f"Customer: {order.customer.get_full_name() or order.customer.username}\n"
+        f"Phone: {order.customer.mobile_number}\n"
         f"Product: {order.product.name} (Qty: {order.quantity})\n"
         f"Price: ₹{order.product.price} x {order.quantity} = ₹{total_price}\n"
         f"Payment Method: {order.get_payment_method_display()}\n"
@@ -57,6 +41,7 @@ def send_order_notification(order):
 
 
 def send_delivery_otp(order):
+    print(f"Sending OTP to: {order.customer.email}")   # <-- idha add pannunga
     subject = 'Your order is out for delivery!'
     message = (
         f"Hi {order.customer.first_name},\n\n"
@@ -87,3 +72,34 @@ Thank you for shopping with Vasanth Store!
         [order.customer.email],
         fail_silently=False,
     )
+
+
+def send_order_email_notification(order):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": settings.BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    data = {
+        "sender": {"name": "Vasanth Store", "email": "selvakumarvasanth80@gmail.com"},
+        "to": [{"email": "OWNER_EMAIL_HERE@gmail.com"}],
+        "subject": "New Order Received",
+        "htmlContent": f"""
+    <p>New order received:</p>
+    <ul>
+        <li>Customer: {order.customer.get_full_name() or order.customer.username}</li>
+        <li>Phone: {order.customer.mobile_number}</li>
+        <li>Product: {order.product.name}</li>
+        <li>Quantity: {order.quantity}</li>
+        <li>Address: {order.address}</li>
+        <li>Payment: {order.get_payment_method_display()}</li>
+        <li>Delivery charge: ₹{order.delivery_charge}</li>
+    </ul>
+"""
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        return response.status_code
+    except Exception as e:
+        print(f"Email send failed: {e}")
