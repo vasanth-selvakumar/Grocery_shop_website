@@ -19,6 +19,11 @@ class Product(models.Model):
     category = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=8, decimal_places=2)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
+    expiry_date = models.DateField(blank=True, null=True)
+    stock_quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.name
 
 
 class Order(models.Model):
@@ -71,4 +76,10 @@ class CartItem(models.Model):
     def subtotal(self):
         return self.product.price * self.quantity
 
-# Create your models here.
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='products/gallery/')
+
+    def __str__(self):
+        return f"{self.product.name} - extra image"

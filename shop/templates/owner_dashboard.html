@@ -7,6 +7,7 @@
 <div class="alert alert-info">{{ message }}</div>
     {% endif %}
 
+<h4 class="mt-4">Orders</h4>
 <table class="table table-bordered">
 <thead>
 <tr>
@@ -57,6 +58,36 @@
 <input type="text" name="otp" placeholder="Enter OTP" class="form-control form-control-sm me-1" required>
 <button type="submit" class="btn btn-sm btn-success">Verify</button>
 </form>
+                    {% endif %}
+</td>
+</tr>
+            {% endfor %}
+</tbody>
+</table>
+
+<h4 class="mt-5">Product Stock</h4>
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Product</th>
+<th>Category</th>
+<th>Stock</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+            {% for product in products %}
+<tr>
+<td>{{ product.name }}</td>
+<td>{{ product.category }}</td>
+<td>{{ product.stock_quantity }}</td>
+<td>
+                    {% if product.stock_quantity == 0 %}
+<span class="badge bg-danger">Out of stock</span>
+                    {% elif product.stock_quantity <= 5 %}
+<span class="badge bg-warning text-dark">Low stock</span>
+                    {% else %}
+<span class="badge bg-success">In stock</span>
                     {% endif %}
 </td>
 </tr>

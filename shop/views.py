@@ -44,6 +44,12 @@ def place_order(request, product_id):
         quantity = int(request.POST.get('quantity'))
         address = request.POST.get('address')
 
+        if quantity > product.stock_quantity:
+            return render(request, 'place_order.html', {
+                'product': product,
+                'error': f'Only {product.stock_quantity} left in stock.'
+            })
+
         order = Order.objects.create(
             customer=request.user,
             product=product,
@@ -52,6 +58,9 @@ def place_order(request, product_id):
             payment_method='cod',
             delivery_charge=5
         )
+
+        product.stock_quantity -= quantity
+        product.save()
 
         send_order_notification(order)
         try:
@@ -111,14 +120,20 @@ def verify_delivery(request):
 
     return render(request, 'verify_delivery.html', {'message': message})
 
-
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     cart = get_or_create_cart(request)
+
+    quantity = int(request.POST.get('quantity', 1))
+    if quantity < 1:
+        quantity = 1
+
     item, created = CartItem.objects.get_or_create(cart=cart, product=product)
     if not created:
-        item.quantity += 1
-        item.save()
+        item.quantity += quantity
+    else:
+        item.quantity = quantity
+    item.save()
     return redirect('view_cart')
 
 
@@ -166,6 +181,7 @@ def checkout(request):
 
     if request.method == 'POST':
         address = request.POST.get('address')
+        orders = []
 
         for index, item in enumerate(cart.items.all()):
             order = Order.objects.create(
@@ -177,12 +193,13 @@ def checkout(request):
                 payment_method='cod',
                 delivery_charge=5 if index == 0 else 0
             )
+            orders.append(order)
+        
 
-            send_order_notification(order)
-            try:
-                send_order_email_notification(order)
-            except Exception as e:
-                print(f"Email notification failed: {e}")
+        try:
+            send_order_email_notification(orders)
+        except Exception as e:
+            print(f"Email notification failed: {e}")
 
         cart.items.all().delete()
         return render(request, 'order_success.html')
@@ -227,8 +244,9 @@ def owner_dashboard(request):
                     message = f'✅ Order #{order.id} marked as delivered!'
                 else:
                     message = '❌ Incorrect OTP. Try again.'
-    orders = Order.objects.all().order_by('-created_at')
-    return render(request, 'owner_dashboard.html', {'orders': orders, 'message': message})
+    orders = Order.objects.exclude(status='delivered').order_by('-created_at')
+    products = Product.objects.all()
+    return render(request, 'owner_dashboard.html', {'orders': orders, 'products': products, 'message': message})
 
 
 @login_required

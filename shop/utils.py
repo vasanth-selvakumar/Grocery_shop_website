@@ -73,33 +73,30 @@ Thank you for shopping with Vasanth Store!
         fail_silently=False,
     )
 
+def send_order_email_notification(orders):
+    first_order = orders[0]
+    total_amount = sum(o.product.price * o.quantity for o in orders) + first_order.delivery_charge
 
-def send_order_email_notification(order):
-    url = "https://api.brevo.com/v3/smtp/email"
-    headers = {
-        "accept": "application/json",
-        "api-key": settings.BREVO_API_KEY,
-        "content-type": "application/json"
-    }
-    data = {
-        "sender": {"name": "Vasanth Store", "email": "selvakumarvasanth80@gmail.com"},
-        "to": [{"email": "OWNER_EMAIL_HERE@gmail.com"}],
-        "subject": "New Order Received",
-        "htmlContent": f"""
-    <p>New order received:</p>
-    <ul>
-        <li>Customer: {order.customer.get_full_name() or order.customer.username}</li>
-        <li>Phone: {order.customer.mobile_number}</li>
-        <li>Product: {order.product.name}</li>
-        <li>Quantity: {order.quantity}</li>
-        <li>Address: {order.address}</li>
-        <li>Payment: {order.get_payment_method_display()}</li>
-        <li>Delivery charge: ₹{order.delivery_charge}</li>
-    </ul>
-"""
-    }
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        return response.status_code
-    except Exception as e:
-        print(f"Email send failed: {e}")
+    items_text = "\n".join(
+        f"- {o.product.name} — Qty: {o.quantity} — ₹{o.product.price * o.quantity}"
+        for o in orders
+    )
+
+    subject = '🛒 New Order Received!'
+    message = (
+        f"New Order!\n"
+        f"Customer: {first_order.customer.get_full_name() or first_order.customer.username}\n"
+        f"Phone: {first_order.customer.mobile_number}\n"
+        f"Address: {first_order.address}\n"
+        f"Payment Method: {first_order.get_payment_method_display()}\n\n"
+        f"Items ordered:\n{items_text}\n\n"
+        f"Total (incl. delivery ₹{first_order.delivery_charge}): ₹{total_amount}"
+    )
+
+    send_mail(
+        subject,
+        message,
+        None,
+        [settings.EMAIL_HOST_USER],
+        fail_silently=False,
+    )
