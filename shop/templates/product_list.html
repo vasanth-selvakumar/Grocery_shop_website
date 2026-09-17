@@ -67,6 +67,8 @@
                 <span class="badge bg-danger mb-2">Out of stock</span>
                 {% elif product.stock_quantity <= 5 %}
                 <span class="badge bg-warning text-dark mb-2">Only {{ product.stock_quantity }} left!</span>
+                {% else %}
+                <span class="badge bg-success mb-2">In stock: {{ product.stock_quantity }}</span>
                 {% endif %}
 
                  {% if product.expiry_date %}
@@ -187,15 +189,23 @@
 
 </style>
 
-<script>
+<<script>
 document.querySelectorAll('.img-box').forEach(function (box) {
     const scrollArea = box.querySelector('.img-scroll');
-    box.addEventListener('mousemove', function (e) {
-        const rect = box.getBoundingClientRect();
-        const percent = (e.clientX - rect.left) / rect.width;
-        const maxScroll = scrollArea.scrollWidth - scrollArea.clientWidth;
-        scrollArea.scrollLeft = percent * maxScroll;
-    });
+    const images = scrollArea.querySelectorAll('img');
+
+    if (images.length <= 1) return;
+
+    let index = 0;
+
+    setInterval(function () {
+        index = (index + 1) % images.length;
+        const imgWidth = scrollArea.clientWidth;
+        scrollArea.scrollTo({
+            left: index * imgWidth,
+            behavior: 'smooth'
+        });
+    }, 2000);
 });
 </script>
 
