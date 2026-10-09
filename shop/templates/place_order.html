@@ -1,53 +1,593 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Place Order</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container mt-4">
-    <h3>Order: {{ product.name }}</h3>
-    <p>Price: ₹{{ product.price }}</p>
 
-    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+{% block title %}Order now | Vasanth Store{% endblock %}
 
-    <form method="post">
-        {% csrf_token %}
+{% block content %}
 
-        <div class="mb-3">
-            <label>Quantity</label>
-            <input type="number" name="quantity" min="1" value="1" class="form-control" style="width:150px;" id="quantity" onchange="updateTotal()" oninput="updateTotal()">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/></symbol>
+</svg>
+
+<div class="co-wrap">
+
+    <div class="co-head">
+        <a href="{% url 'product_detail' product.id %}" class="co-back" aria-label="Back to product">
+            <svg class="ic"><use href="#i-back"/></svg>
+        </a>
+        <h2>Order now</h2>
+        <span class="co-secure"><svg class="ic ic-sm"><use href="#i-lock"/></svg> Secure</span>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <div class="row g-3 g-lg-4">
+
+        <!-- ================= LEFT: PRODUCT + STEPS ================= -->
+        <div class="col-12 col-lg-7">
+
+            <form method="post" id="order-form">
+                {% csrf_token %}
+
+                <!-- ---------- PRODUCT + QUANTITY ---------- -->
+                <section class="zs-card step-card">
+                    <div class="prod-row">
+                        <div class="prod-img">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                            <svg class="ic ic-lg"><use href="#i-box"/></svg>
+                            {% endif %}
+                        </div>
+                        <div class="prod-info">
+                            <div class="prod-name">{{ product.name }}</div>
+                            <div class="prod-price">₹{{ product.price }} each</div>
+                            <div class="prod-line">₹<span id="line-total">{{ product.price }}</span></div>
+                        </div>
+                        <div class="qty-step">
+                            <button type="button" class="qty-btn" onclick="changeQty(-1)" aria-label="Decrease quantity">−</button>
+                            <input type="number" name="quantity" id="quantity" min="1" max="99" value="1"
+                                   class="qty-input" inputmode="numeric"
+                                   onchange="updateTotal()" oninput="updateTotal()">
+                            <button type="button" class="qty-btn" onclick="changeQty(1)" aria-label="Increase quantity">+</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ---------- STEP 1: ADDRESS ---------- -->
+                <section class="zs-card step-card">
+                    <div class="step-title"><span class="step-no">1</span> Delivery address</div>
+
+                    {% for a in addresses %}
+                    <label class="opt addr-option" for="addr-{{ a.id }}">
+                        <input class="opt-input" type="radio" name="address_choice"
+                               id="addr-{{ a.id }}" value="{{ a.id }}" {% if forloop.first %}checked{% endif %}>
+                        <span class="opt-dot"></span>
+                        <span class="opt-ico"><svg class="ic"><use href="#i-pin"/></svg></span>
+                        <span class="opt-body">
+                            <span class="opt-title">{{ a.label }}</span>
+                            <span class="opt-sub">{{ a.address|linebreaksbr }}</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+
+                    <label class="opt addr-option" for="addr-new">
+                        <input class="opt-input" type="radio" name="address_choice"
+                               id="addr-new" value="new" {% if not addresses %}checked{% endif %}>
+                        <span class="opt-dot"></span>
+                        <span class="opt-ico"><svg class="ic"><use href="#{% if addresses %}i-plus{% else %}i-pin{% endif %}"/></svg></span>
+                        <span class="opt-body">
+                            <span class="opt-title">{% if addresses %}Use a new address{% else %}Enter delivery address{% endif %}</span>
+                        </span>
+                    </label>
+
+                    <div id="new-address-box" class="new-box">
+                        <textarea class="form-control mb-2" name="address" id="new-address" rows="3"
+                                  placeholder="House no, street, area, landmark"></textarea>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 col-sm-5">
+                                <input type="text" class="form-control" name="label" maxlength="30"
+                                       placeholder="Label (Home, Shop)">
+                            </div>
+                            <div class="col-12 col-sm-7">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="save_address" id="save-address" checked>
+                                    <label class="form-check-label small" for="save-address">Save this address for next time</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ---------- STEP 2: DELIVERY SLOT ---------- -->
+                <section class="zs-card step-card">
+                    <div class="step-title"><span class="step-no">2</span> Delivery slot</div>
+
+                    <div class="day-row">
+                        <label class="day-option {% if not slot_info.today_open %}slot-disabled{% endif %}" for="day-today">
+                            <input class="visually-hidden" type="radio" name="delivery_day" id="day-today" value="today"
+                                   {% if slot_info.selected_day == 'today' %}checked{% endif %}
+                                   {% if not slot_info.today_open %}disabled{% endif %}>
+                            <span class="day-name">Today</span>
+                            <span class="day-date">{{ slot_info.today_date|date:"d M" }}</span>
+                        </label>
+                        <label class="day-option" for="day-tomorrow">
+                            <input class="visually-hidden" type="radio" name="delivery_day" id="day-tomorrow" value="tomorrow"
+                                   {% if slot_info.selected_day == 'tomorrow' %}checked{% endif %}>
+                            <span class="day-name">Tomorrow</span>
+                            <span class="day-date">{{ slot_info.tomorrow_date|date:"d M" }}</span>
+                        </label>
+                    </div>
+
+                    {% if not slot_info.today_open %}
+                    <p class="small text-muted mb-2">Today's slots are over. Select a tomorrow slot.</p>
+                    {% endif %}
+
+                    {% for s in slot_info.slots %}
+                    <label class="opt slot-option" for="slot-{{ s.key }}" data-today-ok="{{ s.today_ok|yesno:'1,0' }}">
+                        <input class="opt-input" type="radio" name="delivery_slot" id="slot-{{ s.key }}"
+                               value="{{ s.key }}" required {% if slot_info.selected_slot == s.key %}checked{% endif %}>
+                        <span class="opt-dot"></span>
+                        <span class="opt-ico"><svg class="ic"><use href="#i-clock"/></svg></span>
+                        <span class="opt-body"><span class="opt-title">{{ s.label }}</span></span>
+                        <span class="slot-note"></span>
+                    </label>
+                    {% endfor %}
+                </section>
+
+                <!-- ---------- STEP 3: PAYMENT ---------- -->
+                <section class="zs-card step-card">
+                    <div class="step-title"><span class="step-no">3</span> Payment method</div>
+
+                    <label class="opt" for="cod" style="margin-bottom:0">
+                        <input class="opt-input" type="radio" name="payment_method" value="cod" id="cod" checked>
+                        <span class="opt-dot"></span>
+                        <span class="opt-ico"><svg class="ic"><use href="#i-cash"/></svg></span>
+                        <span class="opt-body">
+                            <span class="opt-title">Cash on delivery</span>
+                            <span class="opt-sub">Pay in cash when your order arrives.</span>
+                        </span>
+                    </label>
+                </section>
+
+            </form>
+
         </div>
 
-        <div class="mb-3">
-            <label>Delivery Address</label>
-            <textarea name="address" class="form-control" rows="3" required></textarea>
-        </div>
+        <!-- ================= RIGHT: BILL ================= -->
+        <div class="col-12 col-lg-5">
+            <div class="zs-card sum-card">
 
-        <div class="mb-3">
-            <label class="form-label">Payment Method</label><br>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
-                <label class="form-check-label" for="cod">Cash on Delivery (+₹5 delivery charge)</label>
+                <h5 class="sum-title">Bill details</h5>
+
+                <div class="sum-row">
+                    <span>Item total</span>
+                    <span>₹<span id="subtotal">{{ product.price }}</span></span>
+                </div>
+                <div class="sum-row">
+                    <span>Delivery fee</span>
+                    <span id="delivery">₹{{ delivery_fee }}</span>
+                </div>
+
+                <div class="prog"><div id="free-prog"></div></div>
+                <p class="sum-hint" id="free-msg"></p>
+
+                <hr class="sum-hr">
+
+                <div class="sum-total">
+                    <span>To pay</span>
+                    <span>₹<span id="total-amount">{{ product.price }}</span></span>
+                </div>
+
+                <button type="submit" form="order-form" class="btn-place btn-place-desk">
+                    <span>₹<span class="js-total">{{ product.price }}</span></span>
+                    <span>Place order</span>
+                </button>
+
             </div>
         </div>
 
-        <h4>Total: ₹<span id="total-amount">{{ product.price }}</span></h4>
+    </div>
 
-        <button type="submit" class="btn btn-success">Confirm Order</button>
-    </form>
 </div>
 
+<!-- Sticky pay bar (phones only) -->
+<div class="pay-bar">
+    <div class="pay-total">
+        <span class="pay-label">To pay</span>
+        <span class="pay-amt">₹<span class="js-total">{{ product.price }}</span></span>
+    </div>
+    <button type="submit" form="order-form" class="btn-place btn-place-bar">Place order</button>
+</div>
+
+
+<style>
+.co-wrap { max-width: 1100px; margin: 0 auto; padding-bottom: 96px; }
+@media (min-width: 992px) { .co-wrap { padding-bottom: 0; } }
+
+.ic {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.ic-sm { width: 15px; height: 15px; vertical-align: -2px; }
+.ic-lg { width: 30px; height: 30px; }
+
+/* ---------- Header ---------- */
+.co-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.co-head h2 { font-size: 1.3rem; font-weight: 700; margin: 0; flex: 1; }
+.co-back {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--zs-border);
+    background: #fff;
+    color: #222;
+    display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none;
+}
+.co-secure {
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+/* ---------- Product + quantity ---------- */
+.prod-row { display: flex; align-items: center; gap: 12px; }
+.prod-img {
+    width: 68px; height: 68px;
+    flex-shrink: 0;
+    border: 1px solid var(--zs-border);
+    border-radius: 12px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    color: #999;
+}
+.prod-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.prod-info { flex: 1; min-width: 0; }
+.prod-name { font-weight: 700; font-size: 0.97rem; line-height: 1.25; }
+.prod-price { font-size: 0.78rem; color: var(--zs-muted); margin-top: 2px; }
+.prod-line { font-weight: 700; font-size: 1rem; margin-top: 4px; }
+
+.qty-step {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--zs-green);
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.qty-btn {
+    width: 34px; height: 36px;
+    border: none;
+    background: var(--zs-green);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+.qty-btn:hover { background: var(--zs-green-dark); }
+.qty-input {
+    width: 44px;
+    height: 36px;
+    border: none;
+    text-align: center;
+    font-weight: 700;
+    color: var(--zs-green-dark);
+    background: var(--zs-green-soft);
+    -moz-appearance: textfield;
+}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-input:focus { outline: none; }
+
+/* ---------- Step cards ---------- */
+.step-card { padding: 16px; margin-bottom: 14px; }
+.step-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 12px;
+}
+.step-no {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--zs-green);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ---------- Selectable rows ---------- */
+.opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px solid var(--zs-border);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.opt:hover { border-color: #9fd3a8; }
+.opt-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.opt-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid #c4c9cf;
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color 0.15s ease;
+}
+.opt-ico {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: #f3f5f4;
+    color: #555;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.opt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.opt-title { font-weight: 600; font-size: 0.93rem; line-height: 1.3; }
+.opt-sub { font-size: 0.8rem; color: var(--zs-muted); line-height: 1.35; margin-top: 1px; }
+
+.opt:has(input:checked) {
+    border-color: var(--zs-green);
+    background: var(--zs-green-soft);
+    box-shadow: 0 0 0 3px rgba(12, 131, 31, 0.1);
+}
+.opt:has(input:checked) .opt-dot { border-color: var(--zs-green); }
+.opt:has(input:checked) .opt-dot::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--zs-green);
+}
+.opt:has(input:checked) .opt-ico { background: #fff; color: var(--zs-green); }
+
+.slot-note { font-size: 0.74rem; color: var(--zs-muted); white-space: nowrap; }
+.slot-disabled { opacity: 0.5; cursor: not-allowed; background: #f8f9fa; box-shadow: none; }
+.opt.slot-disabled:hover { border-color: var(--zs-border); }
+
+/* ---------- New address ---------- */
+.new-box { margin-top: 10px; }
+.new-box .form-control:focus {
+    border-color: var(--zs-green);
+    box-shadow: 0 0 0 3px rgba(12, 131, 31, 0.15);
+}
+.form-check-input:checked {
+    background-color: var(--zs-green);
+    border-color: var(--zs-green);
+}
+
+/* ---------- Day switch ---------- */
+.day-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: #f1f3f2;
+    padding: 5px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+}
+.day-option {
+    text-align: center;
+    padding: 8px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    transition: all 0.15s ease;
+}
+.day-name { font-weight: 700; font-size: 0.92rem; }
+.day-date { font-size: 0.75rem; color: var(--zs-muted); }
+.day-option:has(input:checked) {
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.day-option:has(input:checked) .day-name { color: var(--zs-green-dark); }
+.day-option.slot-disabled { background: transparent; box-shadow: none; }
+
+/* ---------- Bill ---------- */
+.sum-card { padding: 18px; }
+@media (min-width: 992px) {
+    .sum-card { position: sticky; top: calc(var(--hdr-h, 70px) + 14px); }
+}
+.sum-title { font-weight: 700; margin-bottom: 12px; }
+.sum-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+.free-tag {
+    color: var(--zs-green);
+    font-weight: 700;
+    background: var(--zs-green-soft);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+.prog {
+    height: 6px;
+    border-radius: 4px;
+    background: #e9ecef;
+    overflow: hidden;
+    margin: 8px 0 6px;
+}
+.prog div {
+    height: 100%;
+    width: 0;
+    background: var(--zs-green);
+    transition: width 0.25s ease;
+}
+.sum-hint { font-size: 0.78rem; color: var(--zs-muted); margin: 0 0 4px; min-height: 1em; }
+.sum-hr { border-color: var(--zs-border); opacity: 1; margin: 12px 0; }
+.sum-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.15rem;
+}
+
+/* ---------- Place order buttons ---------- */
+.btn-place {
+    background: var(--zs-green);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.btn-place:hover { background: var(--zs-green-dark); }
+.btn-place-desk {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    margin-top: 16px;
+    box-shadow: 0 8px 20px rgba(12, 131, 31, 0.32);
+}
+
+/* ---------- Sticky pay bar (phones) ---------- */
+.pay-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--bn-h, 64px);
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: #fff;
+    border-top: 1px solid var(--zs-border);
+    padding: 10px 16px;
+}
+.pay-total { display: flex; flex-direction: column; line-height: 1.2; }
+.pay-label { font-size: 0.72rem; color: var(--zs-muted); }
+.pay-amt { font-size: 1.15rem; font-weight: 700; }
+.btn-place-bar { padding: 12px 26px; }
+
+@media (min-width: 992px) {
+    .pay-bar { display: none; }
+}
+@media (max-width: 991.98px) {
+    .btn-place-desk { display: none; }
+}
+@media (max-width: 575.98px) {
+    .step-card { padding: 14px; }
+    .sum-card { padding: 16px; }
+}
+</style>
+
 <script>
-const price = {{ product.price }};
-const deliveryCharge = 5;
+const price = {{ product.price|stringformat:"f" }};
+// Values come from views.py (FREE_DELIVERY_ABOVE / DELIVERY_CHARGE)
+const FREE_DELIVERY_ABOVE = {{ free_above|stringformat:"f" }};
+const DELIVERY_CHARGE = {{ delivery_fee|stringformat:"f" }};
+
+function fmt(n) {
+    n = Math.round(n * 100) / 100;
+    return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
+function changeQty(delta) {
+    const input = document.getElementById('quantity');
+    let q = (parseInt(input.value) || 1) + delta;
+    if (q < 1) q = 1;
+    if (q > 99) q = 99;
+    input.value = q;
+    updateTotal();
+}
 
 function updateTotal() {
-    const quantity = parseInt(document.getElementById('quantity').value) || 1;
-    const total = (price * quantity) + deliveryCharge;
-    document.getElementById('total-amount').innerText = total.toFixed(2);
+    const quantity = Math.max(1, parseInt(document.getElementById('quantity').value) || 1);
+    const subtotal = price * quantity;
+    const charge = subtotal >= FREE_DELIVERY_ABOVE ? 0 : DELIVERY_CHARGE;
+    const total = subtotal + charge;
+
+    document.getElementById('line-total').textContent = fmt(subtotal);
+    document.getElementById('subtotal').textContent = fmt(subtotal);
+    document.getElementById('total-amount').textContent = fmt(total);
+    document.querySelectorAll('.js-total').forEach(function (el) {
+        el.textContent = fmt(total);
+    });
+
+    const deliveryEl = document.getElementById('delivery');
+    const msg = document.getElementById('free-msg');
+    if (charge === 0) {
+        deliveryEl.textContent = 'FREE';
+        deliveryEl.className = 'free-tag';
+        msg.textContent = 'You got free delivery.';
+    } else {
+        deliveryEl.textContent = '₹' + fmt(charge);
+        deliveryEl.className = '';
+        msg.textContent = 'Add ₹' + fmt(FREE_DELIVERY_ABOVE - subtotal) + ' more for free delivery.';
+    }
+    document.getElementById('free-prog').style.width =
+        Math.min(100, Math.round(subtotal / FREE_DELIVERY_ABOVE * 100)) + '%';
 }
+
+function refreshAddress() {
+    const box = document.getElementById('new-address-box');
+    const textarea = document.getElementById('new-address');
+    const checked = document.querySelector('input[name="address_choice"]:checked');
+    const isNew = !checked || checked.value === 'new';
+    box.style.display = isNew ? 'block' : 'none';
+    textarea.required = isNew;
+}
+
+function refreshSlots() {
+    const dayInput = document.querySelector('input[name="delivery_day"]:checked');
+    const day = dayInput ? dayInput.value : 'tomorrow';
+
+    document.querySelectorAll('.slot-option').forEach(function (label) {
+        const input = label.querySelector('input');
+        const note = label.querySelector('.slot-note');
+        const blocked = day === 'today' && label.dataset.todayOk === '0';
+
+        input.disabled = blocked;
+        label.classList.toggle('slot-disabled', blocked);
+        note.textContent = blocked ? 'Not available today' : '';
+        if (blocked && input.checked) input.checked = false;
+    });
+}
+
+document.querySelectorAll('input[name="address_choice"]').forEach(function (r) {
+    r.addEventListener('change', refreshAddress);
+});
+
+document.querySelectorAll('input[name="delivery_day"]').forEach(function (r) {
+    r.addEventListener('change', refreshSlots);
+});
+
+updateTotal();
+refreshAddress();
+refreshSlots();
 </script>
-</body>
-</html>
+{% endblock %}

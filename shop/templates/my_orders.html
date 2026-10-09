@@ -1,32 +1,411 @@
 {% extends 'base.html' %}
-{% block content %}
-<div class="container mt-4">
-    <h2>Welcome, {{ user.first_name }} {{ user.last_name }} ({{ user.mobile_number }})</h2>
-    <h4 class="mt-3">My Orders</h4>
 
-    <table class="table table-bordered mt-3">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Status</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.product.name }}</td>
-                <td>{{ order.quantity }}</td>
-                <td>{{ order.get_status_display }}</td>
-                <td>{{ order.created_at|date:"d M Y, h:i A" }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5">No orders yet.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block title %}My Orders | Vasanth Store{% endblock %}
+
+{% block content %}
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+</svg>
+
+<div class="mo-wrap">
+
+    <!-- ================= PROFILE HEADER ================= -->
+    <div class="mo-profile">
+        <div class="mo-avatar">
+            {% if user.first_name %}{{ user.first_name|slice:":1"|upper }}{% else %}<svg class="ic ic-lg"><use href="#i-user"/></svg>{% endif %}
+        </div>
+        <div>
+            <div class="mo-hello">Welcome, {{ user.first_name }} {{ user.last_name }}</div>
+            {% if user.mobile_number %}
+            <div class="mo-mobile"><svg class="ic ic-sm"><use href="#i-phone"/></svg> {{ user.mobile_number }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h4 class="mo-title">
+        <svg class="ic"><use href="#i-box"/></svg> My orders
+    </h4>
+
+    {% for order in orders %}
+    <div class="zs-card order-card">
+
+        <!-- ---------- Top row: product + order info ---------- -->
+        <div class="oc-top">
+
+            <div class="oc-img">
+                {% if order.product.image %}
+                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" loading="lazy">
+                {% else %}
+                <svg class="ic ic-lg"><use href="#i-box"/></svg>
+                {% endif %}
+            </div>
+
+            <div class="oc-info">
+                <div class="oc-name">{{ order.product.name }}</div>
+                <div class="oc-meta">
+                    ₹{{ order.product.price|floatformat:"-2" }} × {{ order.quantity }}
+                    {% if order.delivery_charge > 0 %}
+                    · + ₹{{ order.delivery_charge|floatformat:"-2" }} delivery
+                    {% endif %}
+                </div>
+                {% if order.delivery_slot_text and order.status != 'delivered' and order.status != 'cancelled' %}
+                <div class="mt-2">
+                    <span class="slot-chip"><svg class="ic ic-sm"><use href="#i-clock"/></svg> Delivery: {{ order.delivery_slot_text }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="oc-side">
+                <span class="status-pill st-{{ order.status }}">
+                    {% if order.status == 'pending' %}Placed
+                    {% elif order.status == 'confirmed' %}Confirmed
+                    {% elif order.status == 'out_for_delivery' %}Out for delivery
+                    {% elif order.status == 'delivered' %}Delivered
+                    {% elif order.status == 'cancelled' %}Cancelled
+                    {% else %}{{ order.status }}{% endif %}
+                </span>
+                <div class="oc-id">Order #{{ order.id }}</div>
+                <div class="oc-date">{{ order.created_at|date:"d M Y, h:i A" }}</div>
+            </div>
+
+        </div>
+
+        <!-- ---------- Tracking timeline ---------- -->
+        {% if order.status == 'cancelled' %}
+        <div class="cancel-note"><svg class="ic ic-sm"><use href="#i-x-circle"/></svg> This order was cancelled.</div>
+        {% else %}
+        <div class="tl">
+            <div class="tl-step done {% if order.status == 'pending' %}current{% endif %}">
+                <span class="tl-dot"><svg class="ic ic-xs"><use href="#i-check"/></svg></span>
+                <span class="tl-label">Order placed</span>
+            </div>
+            <div class="tl-step {% if order.status == 'confirmed' or order.status == 'out_for_delivery' or order.status == 'delivered' %}done{% endif %} {% if order.status == 'confirmed' %}current{% endif %}">
+                <span class="tl-dot"><svg class="ic ic-xs"><use href="#i-check"/></svg></span>
+                <span class="tl-label">Confirmed</span>
+            </div>
+            <div class="tl-step {% if order.status == 'out_for_delivery' or order.status == 'delivered' %}done{% endif %} {% if order.status == 'out_for_delivery' %}current{% endif %}">
+                <span class="tl-dot"><svg class="ic ic-xs"><use href="#i-check"/></svg></span>
+                <span class="tl-label">Out for delivery</span>
+            </div>
+            <div class="tl-step {% if order.status == 'delivered' %}done current{% endif %}">
+                <span class="tl-dot"><svg class="ic ic-xs"><use href="#i-check"/></svg></span>
+                <span class="tl-label">Delivered</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if order.status == 'out_for_delivery' %}
+        <div class="otp-note">
+            <svg class="ic ic-sm"><use href="#i-truck"/></svg>
+            <span>Your order is on the way. We've emailed you a delivery OTP. Share it with the delivery person.</span>
+        </div>
+        {% endif %}
+
+        <!-- ---------- Actions ---------- -->
+        <div class="oc-actions">
+            {% if order.status == 'pending' %}
+            <form method="post" action="{% url 'cancel_order' order.id %}"
+                  onsubmit="return confirm('Cancel this order?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-cancel"><svg class="ic ic-sm"><use href="#i-x"/></svg> Cancel order</button>
+            </form>
+            {% endif %}
+
+            {% if order.product.stock_quantity > 0 %}
+            <form method="post" action="{% url 'buy_again' order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-again"><svg class="ic ic-sm"><use href="#i-refresh"/></svg> Buy again</button>
+            </form>
+            {% else %}
+            <button type="button" class="btn-oos" disabled>Out of stock</button>
+            {% endif %}
+        </div>
+
+    </div>
+    {% empty %}
+
+    <!-- ================= EMPTY STATE ================= -->
+    <div class="zs-card empty-orders">
+        <div class="empty-ico"><svg class="ic ic-xl"><use href="#i-box"/></svg></div>
+        <h5>No orders yet</h5>
+        <p class="text-muted mb-3">Place your first order and we'll deliver it fast.</p>
+        <a href="{% url 'product_list' %}" class="btn-zs">Start shopping</a>
+    </div>
+
+    {% endfor %}
+
 </div>
+
+
+<style>
+.mo-wrap { max-width: 860px; margin: 0 auto; }
+
+.ic {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.ic-xs { width: 14px; height: 14px; stroke-width: 3; }
+.ic-sm { width: 15px; height: 15px; vertical-align: -2px; }
+.ic-lg { width: 28px; height: 28px; }
+.ic-xl { width: 54px; height: 54px; stroke-width: 1.5; }
+
+/* ---------- Profile header ---------- */
+.mo-profile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--zs-green);
+    color: #fff;
+    border-radius: 18px;
+    padding: 16px 18px;
+    box-shadow: var(--zs-shadow);
+}
+.mo-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.mo-hello { font-weight: 700; font-size: 1.02rem; line-height: 1.25; }
+.mo-mobile { font-size: 0.82rem; opacity: 0.92; margin-top: 2px; }
+
+.mo-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 22px 0 14px;
+}
+
+/* ---------- Order card ---------- */
+.order-card { padding: 16px; margin-bottom: 14px; }
+
+.oc-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.oc-img {
+    width: 66px;
+    height: 66px;
+    flex-shrink: 0;
+    border: 1px solid var(--zs-border);
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: #999;
+}
+.oc-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.oc-info { flex: 1; min-width: 0; }
+.oc-name { font-weight: 700; font-size: 0.98rem; line-height: 1.25; }
+.oc-meta { font-size: 0.8rem; color: var(--zs-muted); margin-top: 3px; }
+
+.oc-side { text-align: right; flex-shrink: 0; }
+.oc-id { font-size: 0.78rem; font-weight: 600; margin-top: 6px; }
+.oc-date { font-size: 0.7rem; color: var(--zs-muted); }
+
+/* Status pill */
+.status-pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.st-pending { background: #fff3cd; color: #b26a00; }
+.st-confirmed { background: #e3f2fd; color: #1565c0; }
+.st-out_for_delivery { background: #fff0e0; color: #e65100; }
+.st-delivered { background: var(--zs-green-soft); color: var(--zs-green-dark); }
+.st-cancelled { background: #fde8ea; color: #c62828; }
+
+.slot-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    border: 1px solid #b7e0c8;
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ---------- Timeline ---------- */
+.tl { display: flex; padding: 4px 0 2px; }
+.tl-step {
+    flex: 1;
+    position: relative;
+    text-align: center;
+}
+/* line to the left of each step (except first) */
+.tl-step + .tl-step::before {
+    content: "";
+    position: absolute;
+    top: 13px;
+    left: -50%;
+    width: 100%;
+    height: 4px;
+    background: #e3e6ea;
+    border-radius: 4px;
+}
+.tl-step.done + .tl-step.done::before,
+.tl-step.done + .tl-step.done.current::before {
+    background: var(--zs-green);
+}
+.tl-dot {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #dfe3e7;
+    color: transparent;
+}
+.tl-step.done .tl-dot {
+    background: var(--zs-green);
+    border-color: var(--zs-green);
+    color: #fff;
+}
+.tl-step.current .tl-dot {
+    box-shadow: 0 0 0 5px rgba(12, 131, 31, 0.18);
+    animation: tlPulse 1.8s ease-in-out infinite;
+}
+@keyframes tlPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(12, 131, 31, 0.18); }
+    50% { box-shadow: 0 0 0 8px rgba(12, 131, 31, 0.08); }
+}
+/* No pulse once delivered */
+.tl-step:last-child.current .tl-dot { animation: none; }
+
+.tl-label {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--zs-muted);
+}
+.tl-step.done .tl-label { color: var(--zs-text); }
+.tl-step.current .tl-label { font-weight: 700; color: var(--zs-green); }
+
+.cancel-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fde8ea;
+    color: #c62828;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+.otp-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+    background: var(--zs-green-soft);
+    border: 1px dashed #9fd3a8;
+    color: var(--zs-green-dark);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+.otp-note .ic { margin-top: 2px; }
+
+/* ---------- Actions ---------- */
+.oc-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--zs-border);
+}
+.oc-actions form { margin: 0; }
+.btn-cancel, .btn-again, .btn-oos {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.btn-cancel {
+    background: #fff;
+    color: #c62828;
+    border: 1.5px solid #e8a3a8;
+}
+.btn-cancel:hover { background: #fde8ea; border-color: #c62828; }
+.btn-again {
+    background: var(--zs-green);
+    color: #fff;
+    border: 1.5px solid var(--zs-green);
+    box-shadow: 0 4px 12px rgba(12, 131, 31, 0.25);
+}
+.btn-again:hover { background: var(--zs-green-dark); transform: translateY(-1px); }
+.btn-oos {
+    background: #e9ecef;
+    color: var(--zs-muted);
+    border: none;
+    cursor: not-allowed;
+}
+
+/* ---------- Empty ---------- */
+.empty-orders { text-align: center; padding: 50px 20px; }
+.empty-ico { color: #b5bcc3; margin-bottom: 8px; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 575.98px) {
+    .order-card { padding: 14px; }
+    .oc-top { flex-wrap: wrap; }
+    .oc-img { width: 56px; height: 56px; }
+    .oc-side {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        text-align: left;
+        border-top: 1px dashed var(--zs-border);
+        padding-top: 10px;
+    }
+    .oc-id { margin-top: 0; }
+    .tl-label { font-size: 0.66rem; }
+    .oc-actions { justify-content: stretch; }
+    .oc-actions form, .oc-actions button { flex: 1; width: 100%; }
+}
+</style>
+
 {% endblock %}

@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Report | Vasanth Store{% endblock %}
+
+{% block content %}
+
+<div class="sr-wrap">
+
+    <div class="sr-head">
+        <h2>📊 Sales Report</h2>
+        <a href="{% url 'owner_dashboard' %}" class="sr-back">← Dashboard</a>
+    </div>
+    <p class="sr-note">Only delivered orders are counted (delivery charge included).</p>
+
+    <!-- ================= DATE CONTROLS ================= -->
+    <div class="zs-card sr-controls">
+
+        <form method="get" class="sr-date-form">
+            <a href="?date={{ prev_day|date:'Y-m-d' }}" class="sr-nav" aria-label="Previous day">‹</a>
+            <input type="date" name="date" value="{{ sel_day|date:'Y-m-d' }}"
+                   max="{{ today|date:'Y-m-d' }}" class="sr-input"
+                   aria-label="Select date" onchange="this.form.submit()">
+            {% if next_day %}
+            <a href="?date={{ next_day|date:'Y-m-d' }}" class="sr-nav" aria-label="Next day">›</a>
+            {% else %}
+            <span class="sr-nav disabled" aria-hidden="true">›</span>
+            {% endif %}
+        </form>
+
+        <div class="sr-row2">
+            <a href="{% url 'sales_report' %}" class="sr-today">Today</a>
+            <form method="get" class="sr-month-form">
+                <select name="month" class="sr-input" aria-label="Select month" onchange="this.form.submit()">
+                    {% for m in months %}
+                    <option value="{{ m.value }}" {% if m.value == month_value %}selected{% endif %}>{{ m.label }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- ================= SUMMARY ================= -->
+    <div class="sr-summary">
+        <div class="sr-sum sr-sum-main">
+            <div class="sr-sum-lbl">{{ sel_day|date:"D, d M Y" }}</div>
+            <div class="sr-sum-num">₹{{ day_summary.sales|floatformat:"-2" }}</div>
+            <div class="sr-sum-sub">{{ day_summary.orders }} orders</div>
+        </div>
+        <div class="sr-sum">
+            <div class="sr-sum-lbl">That week</div>
+            <div class="sr-sum-num">₹{{ week_summary.sales|floatformat:"-2" }}</div>
+            <div class="sr-sum-sub">{{ week_summary.orders }} orders</div>
+        </div>
+        <div class="sr-sum">
+            <div class="sr-sum-lbl">{{ month_label }}</div>
+            <div class="sr-sum-num">₹{{ month_summary.sales|floatformat:"-2" }}</div>
+            <div class="sr-sum-sub">{{ month_summary.orders }} orders</div>
+        </div>
+    </div>
+
+    <!-- ================= CHART ================= -->
+    <div class="zs-card sr-section">
+        <div class="sr-title">{{ month_label }}: daily sales</div>
+        <div class="sr-sub">Tap a bar to open that day</div>
+
+        <div class="sr-chart" id="sr-chart">
+            {% for d in month_days %}
+            <a href="?date={{ d.date|date:'Y-m-d' }}"
+               class="sr-col {% if d.date == sel_day %}active{% endif %}"
+               title="{{ d.date|date:'d M' }}: ₹{{ d.sales|floatformat:'-2' }} ({{ d.orders }} orders)">
+                <div class="sr-bar-area">
+                    <div class="sr-bar" style="height: {% if d.pct %}{{ d.pct }}{% else %}2{% endif %}%;"></div>
+                </div>
+                <div class="sr-day">{{ d.date|date:"j" }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ================= ORDERS OF THE DAY ================= -->
+    <div class="zs-card sr-section">
+        <div class="sr-title">Orders on {{ sel_day|date:"d M Y" }}</div>
+
+        <div class="sr-orders">
+            {% for o in day_orders %}
+            <div class="sr-order">
+                <div class="sr-o-top">
+                    <div>
+                        <span class="sr-o-id">#{{ o.id }}</span>
+                        <span class="sr-o-time">{{ o.time|date:"h:i A" }}</span>
+                    </div>
+                    <div class="sr-o-amt">₹{{ o.amount|floatformat:"-2" }}</div>
+                </div>
+                <div class="sr-o-item">{{ o.product }} <span class="sr-o-qty">× {{ o.qty }}</span></div>
+                <div class="sr-o-bottom">
+                    <span>👤 {{ o.customer }}</span>
+                    <span class="sr-pay">{{ o.payment }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="sr-empty">
+                <div class="sr-empty-ico">📭</div>
+                <div>No delivered orders on this day.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ================= DAY BY DAY LIST ================= -->
+    <div class="zs-card sr-section">
+        <div class="sr-title">{{ month_label }}: day by day</div>
+
+        <div class="sr-days">
+            {% for d in month_days %}
+            <a href="?date={{ d.date|date:'Y-m-d' }}" class="sr-dayrow {% if d.date == sel_day %}active{% endif %}">
+                <div class="sr-dr-date">{{ d.date|date:"d M, D" }}</div>
+                <div class="sr-dr-mid">
+                    <div class="sr-dr-track">
+                        <div class="sr-dr-fill" style="width: {% if d.pct %}{{ d.pct }}%{% else %}2px{% endif %};"></div>
+                    </div>
+                    <div class="sr-dr-amt">₹{{ d.sales|floatformat:"-2" }}</div>
+                </div>
+                <div class="sr-dr-cnt">{{ d.orders }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ================= TOP PRODUCTS ================= -->
+    <div class="zs-card sr-section">
+        <div class="sr-title">🏆 Top selling ({{ month_label }})</div>
+
+        <div class="sr-top">
+            {% for p in top_products %}
+            <div class="sr-prod">
+                <div class="sr-rank">{{ forloop.counter }}</div>
+                <div class="sr-p-info">
+                    <div class="sr-p-name">{{ p.product__name }}</div>
+                    <div class="sr-p-qty">{{ p.qty }} sold</div>
+                </div>
+                <div class="sr-p-rev">₹{{ p.revenue|floatformat:"-2" }}</div>
+            </div>
+            {% empty %}
+            <div class="sr-empty">
+                <div class="sr-empty-ico">🛒</div>
+                <div>No delivered orders this month.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+
+<style>
+.sr-wrap { max-width: 900px; margin: 0 auto; }
+
+.sr-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+.sr-head h2 { font-size: 1.35rem; font-weight: 700; margin: 0; }
+.sr-back {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--zs-green);
+    text-decoration: none;
+    padding: 6px 4px;
+}
+.sr-back:hover { text-decoration: underline; }
+.sr-note { font-size: 0.8rem; color: var(--zs-muted); margin: 0 0 14px; }
+
+/* ---------- Controls ---------- */
+.sr-controls { padding: 12px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.sr-date-form { display: flex; gap: 8px; margin: 0; }
+.sr-nav {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--zs-border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--zs-text);
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.sr-nav:active { transform: scale(0.96); }
+.sr-nav.disabled { opacity: 0.35; pointer-events: none; }
+.sr-input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid var(--zs-border);
+    border-radius: 12px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 16px; /* avoids auto zoom on phones */
+    background: #fff;
+    color: var(--zs-text);
+    outline: none;
+}
+.sr-input:focus {
+    border-color: var(--zs-green);
+    box-shadow: 0 0 0 4px rgba(12, 131, 31, 0.14);
+}
+.sr-row2 { display: flex; gap: 8px; }
+.sr-today {
+    flex: none;
+    height: 48px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--zs-green);
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+.sr-today:hover { background: var(--zs-green-dark); color: #fff; }
+.sr-month-form { flex: 1; min-width: 0; margin: 0; }
+
+/* ---------- Summary ---------- */
+.sr-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.sr-sum {
+    background: #fff;
+    border: 1px solid var(--zs-border);
+    border-radius: 16px;
+    padding: 14px;
+}
+.sr-sum-main {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #0c831f, #2ec26a);
+    border: none;
+    color: #fff;
+}
+.sr-sum-lbl { font-size: 0.74rem; font-weight: 600; color: var(--zs-muted); }
+.sr-sum-num { font-size: 1.5rem; font-weight: 800; line-height: 1.2; margin-top: 2px; color: var(--zs-green-dark); }
+.sr-sum-sub { font-size: 0.76rem; color: var(--zs-muted); margin-top: 2px; }
+.sr-sum-main .sr-sum-lbl,
+.sr-sum-main .sr-sum-sub { color: rgba(255, 255, 255, 0.9); }
+.sr-sum-main .sr-sum-num { color: #fff; font-size: 1.9rem; }
+@media (min-width: 640px) {
+    .sr-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sr-sum-main { grid-column: auto; }
+}
+
+/* ---------- Sections ---------- */
+.sr-section { padding: 16px; margin-bottom: 14px; }
+.sr-title { font-weight: 700; font-size: 1rem; }
+.sr-sub { font-size: 0.76rem; color: var(--zs-muted); margin-top: 2px; }
+
+/* ---------- Bar chart ---------- */
+.sr-chart {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 14px 0 4px;
+    margin-top: 6px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+.sr-col {
+    flex: 1 0 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--zs-muted);
+}
+.sr-bar-area {
+    height: 130px;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 8px;
+}
+.sr-bar {
+    width: 70%;
+    min-height: 3px;
+    background: #a5d6a7;
+    border-radius: 6px 6px 2px 2px;
+    transition: height 0.4s ease;
+}
+.sr-col:hover .sr-bar { background: var(--zs-green); }
+.sr-col.active .sr-bar { background: var(--zs-green); }
+.sr-col.active .sr-bar-area { background: var(--zs-green-soft); }
+.sr-day { font-size: 0.66rem; font-weight: 600; margin-top: 6px; }
+.sr-col.active .sr-day { color: var(--zs-green-dark); font-weight: 800; }
+
+/* ---------- Orders ---------- */
+.sr-orders { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.sr-order {
+    background: #f8f9fa;
+    border: 1px solid var(--zs-border);
+    border-radius: 14px;
+    padding: 12px;
+}
+.sr-o-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.sr-o-id { font-weight: 700; font-size: 0.95rem; }
+.sr-o-time { font-size: 0.76rem; color: var(--zs-muted); margin-left: 6px; }
+.sr-o-amt { font-weight: 800; color: var(--zs-green-dark); font-size: 1rem; }
+.sr-o-item { font-size: 0.88rem; font-weight: 600; margin-top: 6px; }
+.sr-o-qty {
+    background: var(--zs-green);
+    color: #fff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 1px 8px;
+    margin-left: 4px;
+}
+.sr-o-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--zs-muted);
+    margin-top: 8px;
+}
+.sr-pay {
+    background: #fff;
+    border: 1px solid var(--zs-border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-weight: 600;
+    font-size: 0.72rem;
+    color: var(--zs-text);
+}
+@media (min-width: 768px) {
+    .sr-orders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sr-orders .sr-empty { grid-column: 1 / -1; }
+}
+
+/* ---------- Day by day ---------- */
+.sr-days { display: flex; flex-direction: column; margin-top: 8px; max-height: 420px; overflow-y: auto; }
+.sr-dayrow {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 30px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid #f1f3f5;
+    text-decoration: none;
+    color: var(--zs-text);
+    border-radius: 10px;
+}
+.sr-dayrow:hover { background: #f8f9fa; }
+.sr-dayrow.active { background: var(--zs-green-soft); }
+.sr-dr-date { font-size: 0.78rem; font-weight: 600; }
+.sr-dr-mid { min-width: 0; }
+.sr-dr-track { height: 8px; background: #e9ecef; border-radius: 8px; overflow: hidden; }
+.sr-dr-fill { height: 100%; max-width: 100%; background: var(--zs-green); border-radius: 8px; }
+.sr-dr-amt { font-size: 0.74rem; color: var(--zs-muted); margin-top: 3px; font-weight: 600; }
+.sr-dr-cnt { text-align: right; font-weight: 700; font-size: 0.85rem; }
+
+/* ---------- Top products ---------- */
+.sr-top { display: flex; flex-direction: column; margin-top: 8px; }
+.sr-prod {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f1f3f5;
+}
+.sr-prod:last-child { border-bottom: none; }
+.sr-rank {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+.sr-prod:nth-child(1) .sr-rank { background: #fff3cd; color: #8a5a00; }
+.sr-p-info { flex: 1; min-width: 0; }
+.sr-p-name { font-weight: 600; font-size: 0.9rem; line-height: 1.25; }
+.sr-p-qty { font-size: 0.75rem; color: var(--zs-muted); margin-top: 1px; }
+.sr-p-rev { font-weight: 800; font-size: 0.92rem; color: var(--zs-green-dark); white-space: nowrap; }
+
+/* ---------- Empty ---------- */
+.sr-empty { text-align: center; padding: 28px 12px; color: var(--zs-muted); font-size: 0.86rem; }
+.sr-empty-ico { font-size: 2.6rem; margin-bottom: 4px; }
+</style>
+
+<script>
+(function () {
+    // Scroll the chart so the selected day is visible
+    const chart = document.getElementById('sr-chart');
+    const active = chart ? chart.querySelector('.sr-col.active') : null;
+    if (chart && active) {
+        chart.scrollLeft = active.offsetLeft - chart.clientWidth / 2 + active.clientWidth / 2;
+    }
+})();
+</script>
+
+{% endblock %}

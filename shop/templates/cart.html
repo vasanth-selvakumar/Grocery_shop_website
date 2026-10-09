@@ -1,55 +1,388 @@
 {% extends 'base.html' %}
+
+{% block title %}My cart | Vasanth Store{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-  <h2>My Cart</h2>
-  <table class="table align-middle">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Qty</th>
-        <th>Subtotal</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in cart.items.all %}
-      <tr>
-        <td class="d-flex align-items-center">
-          {% if item.product.image %}
-            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
-                 width="50" height="50" style="object-fit: cover; border-radius:6px; margin-right:8px;">
-          {% else %}
-            <div style="width:50px;height:50px;background:#eee;border-radius:6px;margin-right:8px;"></div>
-          {% endif %}
-          {{ item.product.name }}
-        </td>
-        <td>₹{{ item.product.price }}</td>
-        <td>
-          <form method="post" action="{% url 'update_cart_item' item.id %}" class="d-flex align-items-center">
-            {% csrf_token %}
-            <button name="action" value="decrease" class="btn btn-sm btn-outline-secondary">-</button>
-            <span class="mx-2">{{ item.quantity }}</span>
-            <button name="action" value="increase" class="btn btn-sm btn-outline-secondary">+</button>
-          </form>
-        </td>
-        <td>₹{{ item.subtotal }}</td>
-        <td>
-          <form method="post" action="{% url 'update_cart_item' item.id %}">
-            {% csrf_token %}
-            <button name="action" value="remove" class="btn btn-sm btn-danger">Remove</button>
-          </form>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="5" class="text-center">Cart empty</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% if cart.items.all %}
-  <h4>Total: ₹{{ cart.total_price }}</h4>
-  <a href="{% url 'checkout' %}" class="btn btn-success">Checkout</a>
-  {% endif %}
-  <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Continue Shopping</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M1 2h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+    <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+</svg>
+
+<div class="cart-wrap">
+
+    <div class="cart-head">
+        <h2><svg class="ic ic-title"><use href="#i-cart"/></svg> My cart</h2>
+        {% if cart.items.all %}
+        <span class="cart-count-pill">{{ cart.items.all|length }} item{{ cart.items.all|length|pluralize }}</span>
+        {% endif %}
+    </div>
+
+    {% if cart.items.all %}
+
+    <div class="row g-3 g-lg-4">
+
+        <!-- ================= LEFT: ITEMS ================= -->
+        <div class="col-12 col-lg-7">
+
+            <!-- Free delivery progress -->
+            <div class="zs-card ship-card mb-3">
+                {% if more_needed > 0 %}
+                <p class="ship-text">
+                    <svg class="ic ic-sm"><use href="#i-truck"/></svg> Add <b>₹{{ more_needed|floatformat:"-2" }}</b> more for <span class="text-success fw-semibold">free delivery</span>
+                </p>
+                <div class="ship-bar"><div class="ship-fill" style="width: {{ progress }}%;"></div></div>
+                {% else %}
+                <p class="ship-text mb-0 text-success fw-semibold">
+                    <svg class="ic ic-sm"><use href="#i-check-circle"/></svg> You've unlocked free delivery.
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Item cards -->
+            <div class="zs-card items-card">
+                {% for item in cart.items.all %}
+                <div class="cart-item">
+
+                    <a href="{% url 'product_detail' item.product.id %}" class="ci-img">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy">
+                        {% else %}
+                        <svg class="ic ic-lg"><use href="#i-box"/></svg>
+                        {% endif %}
+                    </a>
+
+                    <div class="ci-info">
+                        <a href="{% url 'product_detail' item.product.id %}" class="ci-name">{{ item.product.name }}</a>
+                        <div class="ci-cat">{{ item.product.category }}</div>
+                        <div class="ci-price">
+                            <span class="zs-price">₹{{ item.product.price|floatformat:"-2" }}</span>
+                            {% if item.product.discount_percent %}
+                            <span class="zs-mrp">₹{{ item.product.mrp|floatformat:"-2" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="ci-right">
+                        <form method="post" action="{% url 'update_cart_item' item.id %}" class="ci-qty">
+                            {% csrf_token %}
+                            <button name="action" value="decrease" aria-label="Decrease">−</button>
+                            <span>{{ item.quantity }}</span>
+                            <button name="action" value="increase" aria-label="Increase">+</button>
+                        </form>
+
+                        <div class="ci-sub">₹{{ item.subtotal|floatformat:"-2" }}</div>
+
+                        <form method="post" action="{% url 'update_cart_item' item.id %}">
+                            {% csrf_token %}
+                            <button name="action" value="remove" class="ci-remove"><svg class="ic ic-xs"><use href="#i-trash"/></svg> Remove</button>
+                        </form>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <a href="{% url 'product_list' %}" class="continue-link">
+                <svg class="ic ic-sm"><use href="#i-arrow-left"/></svg> Continue shopping
+            </a>
+        </div>
+
+        <!-- ================= RIGHT: BILL SUMMARY ================= -->
+        <div class="col-12 col-lg-5">
+            <div class="zs-card bill-card">
+
+                <h5 class="bill-title">Bill details</h5>
+
+                {% if total_savings %}
+                <div class="saved-banner">
+                    <svg class="ic"><use href="#i-tag"/></svg>
+                    <span>You're saving <b>₹{{ total_savings|floatformat:"-2" }}</b> on this order</span>
+                </div>
+                {% endif %}
+
+                <div class="bill-row">
+                    <span>Item total</span>
+                    <span>₹{{ subtotal|floatformat:"-2" }}</span>
+                </div>
+                <div class="bill-row">
+                    <span>Delivery fee</span>
+                    {% if delivery_charge == 0 %}
+                    <span class="free-tag">FREE</span>
+                    {% else %}
+                    <span>₹{{ delivery_charge }}</span>
+                    {% endif %}
+                </div>
+
+                <hr class="bill-hr">
+
+                <div class="bill-total">
+                    <span>To pay</span>
+                    <span>₹{{ total|floatformat:"-2" }}</span>
+                </div>
+
+                <div class="bill-perks">
+                    <span><svg class="ic ic-sm"><use href="#i-cash"/></svg> Cash on delivery</span>
+                </div>
+
+                <a href="{% url 'checkout' %}" class="btn-checkout">
+                    <span>₹{{ total|floatformat:"-2" }}</span>
+                    <span class="btn-checkout-label">Proceed to checkout <svg class="ic ic-sm"><use href="#i-arrow-right"/></svg></span>
+                </a>
+
+            </div>
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <!-- ================= EMPTY CART ================= -->
+    <div class="zs-card empty-cart">
+        <div class="empty-ico"><svg class="ic ic-xl"><use href="#i-cart"/></svg></div>
+        <h4>Your cart is empty</h4>
+        <p class="text-muted">Add some products and we'll deliver them fast.</p>
+        <a href="{% url 'product_list' %}" class="btn-zs text-decoration-none">Start shopping</a>
+    </div>
+
+    {% endif %}
+
 </div>
+
+
+<style>
+.cart-wrap { max-width: 1100px; margin: 0 auto; }
+
+.ic {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.ic-xs { width: 13px; height: 13px; vertical-align: -2px; }
+.ic-sm { width: 16px; height: 16px; vertical-align: -3px; }
+.ic-lg { width: 28px; height: 28px; color: #999; }
+.ic-xl { width: 64px; height: 64px; stroke-width: 1.5; }
+.ic-title { width: 26px; height: 26px; color: var(--zs-green); vertical-align: -4px; }
+
+.cart-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.cart-head h2 { font-size: 1.4rem; font-weight: 700; margin: 0; }
+.cart-count-pill {
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* ---------- Free delivery progress ---------- */
+.ship-card { padding: 14px 18px; }
+.ship-text { margin: 0 0 8px; font-size: 0.88rem; }
+.ship-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.ship-fill {
+    height: 100%;
+    background: var(--zs-green);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+/* ---------- Items ---------- */
+.items-card { padding: 4px 16px; }
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--zs-border);
+}
+.cart-item:last-child { border-bottom: none; }
+
+.ci-img {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    border: 1px solid var(--zs-border);
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    text-decoration: none;
+}
+.ci-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+
+.ci-info { flex: 1; min-width: 0; }
+.ci-name {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+    line-height: 1.25;
+    color: var(--zs-text);
+    text-decoration: none;
+}
+.ci-name:hover { color: var(--zs-green); }
+.ci-cat { font-size: 0.72rem; color: var(--zs-muted); margin: 2px 0 4px; }
+.ci-price { display: flex; align-items: baseline; gap: 6px; }
+
+.ci-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.ci-qty {
+    display: flex;
+    align-items: center;
+    background: var(--zs-green);
+    border-radius: 9px;
+    overflow: hidden;
+    margin: 0;
+}
+.ci-qty button {
+    background: transparent;
+    border: 0;
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+}
+.ci-qty button:hover { background: var(--zs-green-dark); }
+.ci-qty span {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    min-width: 24px;
+    text-align: center;
+}
+.ci-sub { font-weight: 700; font-size: 0.95rem; }
+.ci-remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #c62828;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
+}
+.ci-remove:hover { text-decoration: underline; }
+
+.continue-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    color: var(--zs-green);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+.continue-link:hover { color: var(--zs-green-dark); text-decoration: underline; }
+
+/* ---------- Bill summary ---------- */
+.bill-card { padding: 20px; }
+@media (min-width: 992px) {
+    .bill-card { position: sticky; top: calc(var(--hdr-h, 70px) + 14px); }
+}
+.bill-title { font-weight: 700; margin-bottom: 14px; }
+.saved-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    border: 1px dashed #9fd3a8;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+}
+.bill-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+.free-tag {
+    color: var(--zs-green);
+    font-weight: 700;
+    background: var(--zs-green-soft);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+.bill-hr { border-color: var(--zs-border); opacity: 1; margin: 12px 0; }
+.bill-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.bill-perks {
+    display: flex;
+    justify-content: center;
+    margin: 14px 0;
+    font-size: 0.78rem;
+    color: var(--zs-muted);
+}
+.btn-checkout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--zs-green);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    padding: 14px 18px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(12, 131, 31, 0.32);
+    transition: all 0.18s ease;
+}
+.btn-checkout:hover {
+    background: var(--zs-green-dark);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.btn-checkout-label { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Empty cart ---------- */
+.empty-cart { text-align: center; padding: 50px 20px; }
+.empty-ico { color: #b5bcc3; margin-bottom: 8px; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 575.98px) {
+    .items-card { padding: 2px 12px; }
+    .cart-item { gap: 10px; }
+    .ci-img { width: 60px; height: 60px; }
+    .ci-name { font-size: 0.84rem; }
+    .bill-card { padding: 16px; }
+}
+</style>
+
 {% endblock %}

@@ -28,6 +28,7 @@ def send_order_notification(order):
         f"Product: {order.product.name} (Qty: {order.quantity})\n"
         f"Price: ₹{order.product.price} x {order.quantity} = ₹{total_price}\n"
         f"Payment Method: {order.get_payment_method_display()}\n"
+        f"Delivery Slot: {order.delivery_slot_text or 'Not selected'}\n"
         f"Address: {order.address}"
     )
 
@@ -73,6 +74,7 @@ Thank you for shopping with Vasanth Store!
         fail_silently=False,
     )
 
+
 def send_order_email_notification(orders):
     first_order = orders[0]
     total_amount = sum(o.product.price * o.quantity for o in orders) + first_order.delivery_charge
@@ -88,6 +90,7 @@ def send_order_email_notification(orders):
         f"Customer: {first_order.customer.get_full_name() or first_order.customer.username}\n"
         f"Phone: {first_order.customer.mobile_number}\n"
         f"Address: {first_order.address}\n"
+        f"Delivery Slot: {first_order.delivery_slot_text or 'Not selected'}\n"
         f"Payment Method: {first_order.get_payment_method_display()}\n\n"
         f"Items ordered:\n{items_text}\n\n"
         f"Total (incl. delivery ₹{first_order.delivery_charge}): ₹{total_amount}"

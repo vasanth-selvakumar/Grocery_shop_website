@@ -1,0 +1,474 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} | Vasanth Store{% endblock %}
+
+{% block content %}
+
+<div class="pd-wrap">
+
+    <!-- ================= BREADCRUMB ================= -->
+    <nav class="pd-crumb">
+        <a href="{% url 'product_list' %}">Products</a>
+        <span>›</span>
+        <a href="{% url 'product_list' %}?category={{ product.category|urlencode }}">{{ product.category }}</a>
+        <span>›</span>
+        <b>{{ product.name }}</b>
+    </nav>
+
+    <div class="row g-3 g-lg-4">
+
+        <!-- ================= LEFT: GALLERY ================= -->
+        <div class="col-12 col-lg-7">
+            <div class="zs-card gallery-card">
+                <div class="gallery-wrap">
+
+                    <div class="gallery-thumbs" id="gallery-thumbs">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="active" alt="">
+                        {% endif %}
+                        {% for img in product.images.all %}
+                        <img src="{{ img.image.url }}" alt="">
+                        {% endfor %}
+                    </div>
+
+                    <div class="gallery-main-box">
+                        {% if product.discount_percent %}
+                        <span class="zs-off pd-off">{{ product.discount_percent }}% OFF</span>
+                        {% endif %}
+                        <div class="gallery-main" id="gallery-main">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                            {% endif %}
+                            {% for img in product.images.all %}
+                            <img src="{{ img.image.url }}" alt="{{ product.name }}">
+                            {% endfor %}
+                            {% if not product.image and not product.images.all %}
+                            <div class="gallery-empty">🛍️</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RIGHT: DETAILS ================= -->
+        <div class="col-12 col-lg-5">
+
+            <div class="zs-card info-card">
+
+                <span class="pd-cat">{{ product.category }}</span>
+                <h1 class="pd-title">{{ product.name }}</h1>
+
+                <div class="pd-price-row">
+                    <div class="price-box">₹{{ product.price|floatformat:0 }}</div>
+                    {% if product.discount_percent %}
+                    <div class="pd-mrp-col">
+                        <span class="zs-mrp">MRP ₹{{ product.mrp|floatformat:0 }}</span>
+                        <span class="pd-save">Save ₹{{ product.discount_amount|floatformat:0 }} ({{ product.discount_percent }}% OFF)</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="pd-tax">Inclusive of all taxes</p>
+
+                {% if product.expiry_date %}
+                <p class="pd-expiry">🗓️ Expiry: {{ product.expiry_date }}</p>
+                {% endif %}
+
+                <div class="pd-badges">
+                    <div class="badge-box"><div class="bb-ico">💵</div>Cash on<br>Delivery</div>
+                    <div class="badge-box"><div class="bb-ico">⚡</div>Fast<br>Delivery</div>
+                    <div class="badge-box"><div class="bb-ico">✅</div>Quality<br>Assured</div>
+                </div>
+
+                {% if product.stock_quantity > 0 %}
+
+                <form method="post" action="{% url 'add_to_cart' product.id %}">
+                    {% csrf_token %}
+
+                    <div class="qty-row">
+                        <span class="qty-label">Quantity</span>
+                        <div class="qty-box">
+                            <button type="button" id="qty-minus" aria-label="Decrease">−</button>
+                            <input type="number" name="quantity" id="qty-input" value="1" min="1" max="{{ product.stock_quantity }}">
+                            <button type="button" id="qty-plus" aria-label="Increase">+</button>
+                        </div>
+                    </div>
+
+                    <div class="pd-btns">
+                        <button type="submit" class="btn-add-cart">🛒 Add to Cart</button>
+                        <a href="{% url 'place_order' product.id %}" class="btn-order-now">⚡ Order Now</a>
+                    </div>
+                </form>
+
+                {% else %}
+                <button class="btn-out" disabled>Out of stock</button>
+                {% endif %}
+
+                {% if user.is_staff or user.is_superuser %}
+                <div class="staff-line">
+                    🔒 Staff only: stock {{ product.stock_quantity }}
+                </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= SIMILAR PRODUCTS (optional) ================= -->
+    {% if similar_products %}
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <h5 class="zs-section-title mb-2">You may also like</h5>
+        <a href="{% url 'product_list' %}?category={{ product.category|urlencode }}" class="view-all">View all →</a>
+    </div>
+    <div class="zs-scroll-row mb-3">
+        {% for p in similar_products %}
+        <a href="{% url 'product_detail' p.id %}" class="sim-card zs-card zs-card-hover">
+            {% if p.discount_percent %}<span class="zs-off sim-off">{{ p.discount_percent }}% OFF</span>{% endif %}
+            <div class="sim-img">
+                {% if p.image %}
+                <img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">
+                {% else %}
+                <div class="sim-noimg">🛍️</div>
+                {% endif %}
+            </div>
+            <div class="sim-body">
+                <div class="sim-name">{{ p.name }}</div>
+                <div class="sim-price">
+                    <span class="zs-price">₹{{ p.price|floatformat:0 }}</span>
+                    {% if p.discount_percent %}<span class="zs-mrp">₹{{ p.mrp|floatformat:0 }}</span>{% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+
+<style>
+.pd-wrap { max-width: 1150px; margin: 0 auto; }
+
+/* ---------- Breadcrumb ---------- */
+.pd-crumb {
+    font-size: 0.8rem;
+    color: var(--zs-muted);
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+.pd-crumb a { color: var(--zs-muted); text-decoration: none; }
+.pd-crumb a:hover { color: var(--zs-green); }
+.pd-crumb b { color: var(--zs-text); font-weight: 600; }
+
+/* ---------- Gallery ---------- */
+.gallery-card { padding: 16px; }
+.gallery-wrap { display: flex; gap: 14px; }
+
+.gallery-thumbs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 460px;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.gallery-thumbs::-webkit-scrollbar { display: none; }
+.gallery-thumbs img {
+    width: 62px;
+    height: 62px;
+    object-fit: contain;
+    border: 2px solid var(--zs-border);
+    border-radius: 12px;
+    padding: 4px;
+    cursor: pointer;
+    background: #fff;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+.gallery-thumbs img:hover { border-color: #9fd3a8; }
+.gallery-thumbs img.active {
+    border-color: var(--zs-green);
+    box-shadow: 0 0 0 3px rgba(12, 131, 31, 0.15);
+}
+
+.gallery-main-box { flex: 1; min-width: 0; position: relative; }
+.pd-off {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 5;
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+.gallery-main {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-radius: 14px;
+    background: #fff;
+}
+.gallery-main::-webkit-scrollbar { display: none; }
+.gallery-main img {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 440px;
+    object-fit: contain;
+    scroll-snap-align: center;
+    padding: 12px;
+}
+.gallery-empty {
+    flex: 0 0 100%;
+    height: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    background: var(--zs-bg);
+    border-radius: 14px;
+}
+
+/* ---------- Info card ---------- */
+.info-card { padding: 22px; }
+@media (min-width: 992px) {
+    .info-card { position: sticky; top: calc(var(--hdr-h, 70px) + 14px); }
+}
+.pd-cat {
+    display: inline-block;
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+.pd-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0 0 16px;
+}
+.pd-price-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.price-box {
+    background: var(--zs-green);
+    color: #fff;
+    font-size: 1.9rem;
+    font-weight: 700;
+    padding: 4px 18px;
+    border-radius: 12px;
+    line-height: 1.3;
+    box-shadow: 0 6px 16px rgba(12, 131, 31, 0.28);
+}
+.pd-mrp-col { display: flex; flex-direction: column; line-height: 1.35; }
+.pd-mrp-col .zs-mrp { font-size: 0.95rem; }
+.pd-save { color: var(--zs-green); font-weight: 700; font-size: 0.85rem; }
+.pd-tax { font-size: 0.75rem; color: var(--zs-muted); margin: 6px 0 4px; }
+.pd-expiry { font-size: 0.8rem; color: var(--zs-muted); margin: 6px 0 0; }
+
+.pd-badges {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 18px 0;
+}
+.badge-box {
+    background: #f8f9fa;
+    border: 1px solid var(--zs-border);
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #444;
+    line-height: 1.3;
+}
+.bb-ico { font-size: 1.4rem; margin-bottom: 2px; }
+
+/* ---------- Quantity ---------- */
+.qty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.qty-label { font-weight: 600; font-size: 0.92rem; }
+.qty-box {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--zs-green);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+.qty-box button {
+    width: 42px;
+    height: 40px;
+    border: none;
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.qty-box button:hover { background: var(--zs-green); color: #fff; }
+.qty-box input {
+    width: 54px;
+    height: 40px;
+    border: none;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1rem;
+    outline: none;
+}
+
+/* ---------- Buttons ---------- */
+.pd-btns { display: flex; flex-direction: column; gap: 10px; }
+.btn-add-cart, .btn-order-now, .btn-out {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 13px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.98rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.btn-add-cart {
+    background: var(--zs-green);
+    color: #fff;
+    border: 2px solid var(--zs-green);
+    box-shadow: 0 6px 16px rgba(12, 131, 31, 0.28);
+}
+.btn-add-cart:hover { background: var(--zs-green-dark); border-color: var(--zs-green-dark); color: #fff; transform: translateY(-1px); }
+.btn-order-now {
+    background: #fff;
+    color: var(--zs-green);
+    border: 2px solid var(--zs-green);
+}
+.btn-order-now:hover { background: var(--zs-green-soft); color: var(--zs-green-dark); }
+.btn-out {
+    background: #e9ecef;
+    color: var(--zs-muted);
+    border: none;
+    cursor: not-allowed;
+}
+.staff-line {
+    margin-top: 14px;
+    font-size: 0.75rem;
+    color: var(--zs-muted);
+    border-top: 1px dashed var(--zs-border);
+    padding-top: 10px;
+}
+
+/* ---------- Similar products ---------- */
+.view-all {
+    color: var(--zs-green);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+.view-all:hover { color: var(--zs-green-dark); text-decoration: underline; }
+.sim-card {
+    width: 150px;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--zs-text);
+    display: block;
+}
+@media (min-width: 768px) { .sim-card { width: 180px; } }
+.sim-off { position: absolute; top: 8px; left: 8px; z-index: 5; border-radius: 6px; }
+.sim-img { padding: 14px 10px 6px; background: #fff; }
+.sim-img img { display: block; width: 100%; height: 110px; object-fit: contain; }
+.sim-noimg {
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    background: var(--zs-bg);
+    border-radius: 10px;
+}
+.sim-body { padding: 4px 12px 12px; }
+.sim-name {
+    font-weight: 600;
+    font-size: 0.84rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.1em;
+    margin-bottom: 4px;
+}
+.sim-price { display: flex; align-items: baseline; gap: 6px; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 767px) {
+    .gallery-card { padding: 10px; }
+    .gallery-wrap { flex-direction: column-reverse; }
+    .gallery-thumbs {
+        flex-direction: row;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+    .gallery-main img, .gallery-empty { height: 300px; }
+    .info-card { padding: 16px; }
+    .pd-title { font-size: 1.25rem; }
+    .price-box { font-size: 1.6rem; }
+}
+</style>
+
+<script>
+(function () {
+    const main = document.getElementById('gallery-main');
+    const thumbs = document.querySelectorAll('#gallery-thumbs img');
+    if (main && thumbs.length > 0) {
+        thumbs.forEach(function (t, i) {
+            t.addEventListener('click', function () {
+                main.scrollTo({ left: i * main.clientWidth, behavior: 'smooth' });
+            });
+        });
+        main.addEventListener('scroll', function () {
+            const i = Math.round(main.scrollLeft / main.clientWidth);
+            thumbs.forEach(function (t, idx) {
+                t.classList.toggle('active', idx === i);
+            });
+        });
+    }
+
+    const qty = document.getElementById('qty-input');
+    const minus = document.getElementById('qty-minus');
+    const plus = document.getElementById('qty-plus');
+    if (qty && minus && plus) {
+        const max = parseInt(qty.max) || 9999;
+        minus.addEventListener('click', function () {
+            qty.value = Math.max(1, (parseInt(qty.value) || 1) - 1);
+        });
+        plus.addEventListener('click', function () {
+            qty.value = Math.min(max, (parseInt(qty.value) || 1) + 1);
+        });
+    }
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,234 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bill #{{ order_ids.0 }}</title>
+<style>
+    /* 80mm thermal paper. 58mm printer na: size 58mm, .bill width 58mm, font-size 11px, items table column widths kuraikkanum */
+    @page {
+        size: 80mm 297mm;
+        margin: 0;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background: #f1f1f1;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+        line-height: 1.35;
+        color: #000;
+    }
+
+    .bill {
+        width: 80mm;
+        margin: 10px auto;
+        padding: 4mm 3mm;
+        background: #fff;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .shop {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .line {
+        border-top: 1px dashed #000;
+        margin: 6px 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        text-align: left;
+        font-size: 12px;
+        padding: 2px 0;
+    }
+
+    td {
+        padding: 2px 0;
+        vertical-align: top;
+    }
+
+    .r {
+        text-align: right;
+    }
+
+    /* Items table: Qty / Rate / Amt columns ku fixed width, onna othunga koodadhu */
+    .items {
+        table-layout: fixed;
+    }
+    .items .c-qty {
+        width: 8mm;
+    }
+    .items .c-rate {
+        width: 17mm;
+    }
+    .items .c-amt {
+        width: 18mm;
+    }
+    .items th.r,
+    .items td.r {
+        padding-left: 4px;
+    }
+
+    .name {
+        word-break: break-word;
+    }
+
+    .total td {
+        font-size: 16px;
+        font-weight: bold;
+        padding-top: 4px;
+    }
+
+    .small {
+        font-size: 12px;
+        word-break: break-word;
+    }
+
+    .actions {
+        width: 80mm;
+        margin: 10px auto;
+        text-align: center;
+    }
+
+    .actions button {
+        padding: 8px 18px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    @media print {
+        body {
+            background: #fff;
+        }
+        .bill {
+            margin: 0;
+            width: 80mm;
+        }
+        .actions {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="actions">
+    <button onclick="window.print()">🖨️ Print</button>
+    <button onclick="closeBill()">Close</button>
+</div>
+
+<div class="bill">
+
+    <div class="center">
+        <div class="shop">{{ shop_name }}</div>
+        <div class="small">{{ shop_address }}</div>
+        <div class="small">Ph: {{ shop_phone }}</div>
+    </div>
+
+    <div class="line"></div>
+
+    <div class="small">
+        Order: {% for id in order_ids %}#{{ id }}{% if not forloop.last %}, {% endif %}{% endfor %}<br>
+        Date: {{ created_at|date:"d/m/Y h:i A" }}<br>
+        Customer: {{ customer_name }}<br>
+        {% if customer_mobile %}Mobile: {{ customer_mobile }}<br>{% endif %}
+        Address: {{ address }}<br>
+        {% if delivery_slot %}Delivery: {{ delivery_slot }}<br>{% endif %}
+        Payment: {{ payment }}
+    </div>
+
+    <div class="line"></div>
+
+    <table class="items">
+        <colgroup>
+            <col>
+            <col class="c-qty">
+            <col class="c-rate">
+            <col class="c-amt">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="r">Qty</th>
+                <th class="r">Rate</th>
+                <th class="r">Amt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in lines %}
+            <tr>
+                <td class="name">{{ line.name }}</td>
+                <td class="r">{{ line.qty }}</td>
+                <td class="r">{{ line.price|floatformat:2 }}</td>
+                <td class="r">{{ line.amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="line"></div>
+
+    <table>
+        <tr>
+            <td>Subtotal</td>
+            <td class="r">Rs.{{ subtotal|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>Delivery</td>
+            <td class="r">{% if delivery %}Rs.{{ delivery|floatformat:2 }}{% else %}FREE{% endif %}</td>
+        </tr>
+        <tr class="total">
+            <td>TOTAL</td>
+            <td class="r">Rs.{{ total|floatformat:2 }}</td>
+        </tr>
+    </table>
+
+    <div class="line"></div>
+
+    <div class="center small">
+        Thank you! Visit again.
+    </div>
+
+</div>
+
+<script>
+    var dashboardUrl = "{% url 'owner_dashboard' %}";
+
+    // Tab close pannum, browser block pannina dashboard ku poidum
+    function closeBill() {
+        window.close();
+        setTimeout(function () {
+            window.location.href = dashboardUrl;
+        }, 300);
+    }
+
+    // Page load aana udane print dialog
+    window.addEventListener('load', function () {
+        window.print();
+    });
+
+    // Print mudinjadhum (illa Cancel pannina) auto close
+    window.addEventListener('afterprint', closeBill);
+</script>
+
+</body>
+</html>

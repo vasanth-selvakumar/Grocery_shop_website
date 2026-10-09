@@ -1,62 +1,551 @@
 {% load static %}
+{% load cart_tags %}
+{% cart_count as nav_cart_count %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vasanth Store</title>
+<title>{% block title %}Vasanth Store{% endblock %}</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
 <style>
+/* ============ DESIGN TOKENS (ella pages um use pannalam) ============ */
+:root {
+    --zs-green: #0c831f;
+    --zs-green-dark: #096316;
+    --zs-green-soft: #e8f5e9;
+    --zs-dark: #1a1d21;
+    --zs-text: #1c1c1c;
+    --zs-muted: #6c757d;
+    --zs-bg: #f4f6f8;
+    --zs-card: #ffffff;
+    --zs-border: #e9ecef;
+    --zs-radius: 14px;
+    --zs-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    --zs-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--zs-bg);
+    color: var(--zs-text);
+    -webkit-font-smoothing: antialiased;
+}
+
 /* Hide number input spinner arrows - Chrome, Safari, Edge */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-
 /* Hide number input spinner arrows - Firefox */
 input[type=number] {
     -moz-appearance: textfield;
     appearance: textfield;
 }
+
+/* ============ HEADER ============ */
+.zs-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background: var(--zs-dark);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    border-bottom: 3px solid var(--zs-green);
+}
+.zs-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.zs-brand {
+    order: 1;
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.25rem;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.zs-brand:hover { color: #fff; }
+
+.zs-brand .zs-logo {
+    background: #ffffff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+/* Search */
+.zs-search {
+    order: 3;
+    flex: 1 1 100%;
+    position: relative;
+}
+.zs-search input {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 44px 10px 40px;
+    font-size: 0.9rem;
+    background: #fff;
+    outline: none;
+}
+.zs-search input:focus { box-shadow: 0 0 0 3px rgba(12, 131, 31, 0.45); }
+.zs-search .zs-s-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--zs-muted);
+    pointer-events: none;
+}
+.zs-search button {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--zs-green);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+}
+
+/* Right side actions */
+.zs-actions {
+    order: 2;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.zs-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+    background: transparent;
+    border: 1px solid #4a4f55;
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+/* Hover panna white background + dark text */
+.zs-pill:hover,
+.zs-pill:focus-visible,
+.zs-pill:active,
+.zs-pill.show {
+    background: #fff !important;
+    border-color: #fff !important;
+    color: var(--zs-dark) !important;
+}
+.zs-pill.active { border-color: var(--zs-green); color: #fff; }
+.zs-pill-cart {
+    background: var(--zs-green);
+    border-color: var(--zs-green);
+    font-weight: 600;
+}
+.zs-pill-cart .badge {
+    background: #fff !important;
+    color: var(--zs-green) !important;
+    font-weight: 700;
+}
+.zs-pill-cart:hover .badge { background: var(--zs-green) !important; color: #fff !important; }
+.zs-pill-danger { border-color: #7a2e35; color: #ff8d95; }
+
+.zs-header .dropdown-menu {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--zs-shadow-hover);
+    padding: 6px;
+}
+.zs-header .dropdown-item {
+    border-radius: 8px;
+    font-size: 0.88rem;
+    padding: 8px 12px;
+}
+.zs-header .dropdown-item:hover { background: var(--zs-green-soft); color: var(--zs-green-dark); }
+
+/* Desktop layout */
+@media (min-width: 992px) {
+    .zs-search { order: 2; flex: 1 1 auto; max-width: 560px; margin: 0 auto; }
+    .zs-actions { order: 3; margin-left: 0; }
+}
+
+/* Mobile: staff menu mattum top la, matha ellam bottom nav la */
+@media (max-width: 991.98px) {
+    .zs-top { padding-top: 8px; padding-bottom: 8px; }
+    .zs-brand { font-size: 1.1rem; }
+    .zs-actions .zs-hide-mobile { display: none !important; }
+}
+
+/* ============ PAGE AREA ============ */
+.zs-main { min-height: 70vh; }
+
+/* ============ REUSABLE COMPONENTS (next pages la use pannuvom) ============ */
+.zs-card {
+    background: var(--zs-card);
+    border-radius: var(--zs-radius);
+    box-shadow: var(--zs-shadow);
+    border: 1px solid var(--zs-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.zs-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--zs-shadow-hover);
+}
+.btn-zs {
+    background: var(--zs-green);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 8px 18px;
+    transition: all 0.2s ease;
+}
+.btn-zs:hover { background: var(--zs-green-dark); color: #fff; transform: translateY(-1px); }
+.zs-section-title {
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 18px 0 12px;
+}
+.zs-price { color: var(--zs-green); font-weight: 700; }
+.zs-mrp { color: var(--zs-muted); text-decoration: line-through; font-size: 0.85em; }
+.zs-off {
+    background: var(--zs-green);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.zs-scroll-row {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+}
+.zs-scroll-row::-webkit-scrollbar { display: none; }
+.zs-scroll-row > * { flex: none; scroll-snap-align: start; }
+
+/* ============ MOBILE BOTTOM NAV ============ */
+.zs-bottom-nav { display: none; }
+
+@media (max-width: 991.98px) {
+    body { padding-bottom: 76px; }
+    .zs-bottom-nav {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1040;
+        background: #fff;
+        border-top: 1px solid var(--zs-border);
+        box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.08);
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    }
+    .zs-bn-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: var(--zs-muted);
+        font-family: inherit;
+        font-size: 0.68rem;
+        font-weight: 500;
+        text-decoration: none;
+        background: none;
+        border: none;
+        padding: 4px 0;
+        position: relative;
+        cursor: pointer;
+    }
+    /* Line icons (SVG): color follows the text color, so active/hover just works */
+    .zs-bn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        line-height: 1;
+    }
+    .zs-bn-icon svg {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: stroke-width 0.15s ease;
+    }
+    .zs-bn-item.active { color: var(--zs-green); font-weight: 700; }
+    .zs-bn-item.active .zs-bn-icon svg { stroke-width: 2.3; }
+    .zs-bn-item:hover { color: var(--zs-green); }
+    .zs-bn-item .badge {
+        position: absolute;
+        top: -2px;
+        left: 56%;
+        font-size: 0.6rem;
+        background: var(--zs-green) !important;
+    }
+}
+
+/* ============ FLOATING VIEW CART BAR (mobile) ============ */
+.zs-float-cart { display: none; }
+@media (max-width: 991.98px) {
+    .zs-float-cart {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 78px;
+        z-index: 1035;
+        background: var(--zs-green);
+        color: #fff;
+        text-decoration: none;
+        padding: 12px 18px;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        box-shadow: 0 8px 22px rgba(12, 131, 31, 0.45);
+        animation: zsSlideUp 0.35s ease;
+    }
+    .zs-float-cart:hover { color: #fff; background: var(--zs-green-dark); }
+}
+@keyframes zsSlideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ============ TOAST ============ */
+.zs-toast-wrap {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.zs-toast {
+    background: var(--zs-dark);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    box-shadow: var(--zs-shadow-hover);
+    border-left: 4px solid var(--zs-green);
+    animation: zsToastIn 0.3s ease;
+}
+@keyframes zsToastIn {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@media (max-width: 991.98px) {
+    .zs-toast-wrap { left: 12px; right: 12px; top: 120px; }
+}
+
+/* ============ FOOTER ============ */
+.zs-footer {
+    background: var(--zs-dark);
+    color: #b8bec6;
+    margin-top: 40px;
+    padding: 28px 0 18px;
+    font-size: 0.85rem;
+}
+.zs-footer h6 { color: #fff; font-weight: 600; }
+.zs-footer a { color: #b8bec6; text-decoration: none; }
+.zs-footer a:hover { color: #fff; }
 </style>
+
+{% block extra_head %}{% endblock %}
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-<div class="container-fluid d-flex justify-content-between align-items-center px-3">
-<a class="navbar-brand me-auto" href="{% url 'home' %}">Vasanth Store</a>
-<div>
-<a href="{% url 'product_list' %}" class="btn btn-outline-info me-2">🛍️ Products</a>
 
-{% if user.is_staff or user.is_superuser %}
-<a href="{% url 'owner_dashboard' %}" class="btn btn-outline-warning me-2">📋 Dashboard</a>
-{% endif %}
+<!-- ================= HEADER ================= -->
+<header class="zs-header">
+    <div class="container-fluid px-3 zs-top">
 
-{% if user.is_authenticated %}
-<a href="{% url 'my_orders' %}" class="btn btn-outline-light me-2">📦 My Orders</a>
-{% endif %}
+        <a class="zs-brand" href="{% url 'home' %}">
+            <span class="zs-logo">🛒</span> Vasanth Store
+        </a>
 
-<a href="{% url 'view_cart' %}" class="btn btn-outline-light me-2">🛒 Cart</a>
+        <!-- Search: product list page ku GET q= nu anuppum -->
+        <form class="zs-search" method="get" action="{% url 'product_list' %}">
+            <span class="zs-s-icon">🔍</span>
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder='Search "rice", "sugar", "snacks"...' autocomplete="off">
+            <button type="submit" aria-label="Search">➜</button>
+        </form>
 
-{% if user.is_authenticated %}
-<form method="post" action="{% url 'logout' %}" class="d-inline">
-    {% csrf_token %}
-<button type="submit" class="btn btn-outline-danger">🚪 Logout</button>
-</form>
-{% else %}
-<a href="{% url 'login' %}" class="btn btn-outline-success">🔑 Login</a>
-{% endif %}
+        <div class="zs-actions">
+            <a href="{% url 'product_list' %}" class="zs-pill zs-hide-mobile">🛍️ Products</a>
+
+            {% if user.is_staff or user.is_superuser %}
+            <div class="dropdown">
+                <button class="zs-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    ⚙️ Admin
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'owner_dashboard' %}">📋 Dashboard</a></li>
+                    <li><a class="dropdown-item" href="{% url 'stock_dashboard' %}">📦 Stock</a></li>
+                    <li><a class="dropdown-item" href="{% url 'sales_report' %}">📊 Sales</a></li>
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+            <a href="{% url 'my_orders' %}" class="zs-pill zs-hide-mobile">📦 My Orders</a>
+            {% endif %}
+
+            <a href="{% url 'view_cart' %}" class="zs-pill zs-pill-cart zs-hide-mobile">
+                🛒 Cart <span class="badge rounded-pill">{{ nav_cart_count }}</span>
+            </a>
+
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}" class="d-inline zs-hide-mobile">
+                {% csrf_token %}
+                <button type="submit" class="zs-pill zs-pill-danger">🚪 Logout</button>
+            </form>
+            {% else %}
+            <a href="{% url 'login' %}" class="zs-pill zs-hide-mobile">🔑 Login</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<!-- ================= PAGE CONTENT ================= -->
+<div class="container mt-4 zs-main">
+    {% block content %}
+    {% endblock %}
 </div>
-</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="zs-footer d-none d-lg-block">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-5">
+                <h6>🛒 Vasanth Store</h6>
+                <p class="mb-0">Unga ooru grocery shop, ippo online la. Fresh products, nalla price, fast delivery.</p>
+            </div>
+            <div class="col-md-3">
+                <h6>Quick Links</h6>
+                <a href="{% url 'home' %}">Home</a><br>
+                <a href="{% url 'product_list' %}">All Products</a><br>
+                <a href="{% url 'view_cart' %}">My Cart</a>
+            </div>
+            <div class="col-md-4">
+                <h6>Why Vasanth Store?</h6>
+                <span>⚡ Fast delivery</span><br>
+                <span>💵 Cash on Delivery</span><br>
+                <span>✅ Quality products</span>
+            </div>
+        </div>
+        <hr style="border-color:#3a3f45;">
+        <div class="text-center">© {% now "Y" %} Vasanth Store. All rights reserved.</div>
+    </div>
+</footer>
+
+<!-- ================= FLOATING CART BAR (mobile) =================
+     Cart page, checkout page, order-now page la kaatadhu -->
+{% if nav_cart_count and request.resolver_match.url_name != 'view_cart' and '/checkout/' not in request.path and '/order/' not in request.path %}
+<a href="{% url 'view_cart' %}" class="zs-float-cart">
+    <span>🛒 {{ nav_cart_count }} item{{ nav_cart_count|pluralize }} in cart</span>
+    <span>View Cart ➜</span>
+</a>
+{% endif %}
+
+<!-- ================= MOBILE BOTTOM NAV (SVG line icons) ================= -->
+<nav class="zs-bottom-nav">
+    <a href="{% url 'home' %}" class="zs-bn-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+        <span class="zs-bn-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        </span>Home
+    </a>
+    <a href="{% url 'product_list' %}" class="zs-bn-item {% if request.resolver_match.url_name == 'product_list' %}active{% endif %}">
+        <span class="zs-bn-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </span>Products
+    </a>
+    <a href="{% url 'view_cart' %}" class="zs-bn-item {% if request.resolver_match.url_name == 'view_cart' %}active{% endif %}">
+        <span class="zs-bn-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M1 2h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        </span>Cart
+        {% if nav_cart_count %}<span class="badge rounded-pill">{{ nav_cart_count }}</span>{% endif %}
+    </a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'my_orders' %}" class="zs-bn-item {% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}">
+        <span class="zs-bn-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+        </span>Orders
+    </a>
+    <form method="post" action="{% url 'logout' %}" class="d-flex flex-fill m-0">
+        {% csrf_token %}
+        <button type="submit" class="zs-bn-item w-100">
+            <span class="zs-bn-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            </span>Logout
+        </button>
+    </form>
+    {% else %}
+    <a href="{% url 'login' %}" class="zs-bn-item {% if request.resolver_match.url_name == 'login' %}active{% endif %}">
+        <span class="zs-bn-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
+        </span>Login
+    </a>
+    {% endif %}
 </nav>
 
-<div class="container mt-4">
-        {% block content %}
-        {% endblock %}
-</div>
+<!-- Toast container -->
+<div class="zs-toast-wrap" id="zsToastWrap"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+/* Toast helper: edhu venaalum JS la showToast('Added to cart ✓') nu call pannalam */
+function showToast(message) {
+    const wrap = document.getElementById('zsToastWrap');
+    if (!wrap) return;
+    const t = document.createElement('div');
+    t.className = 'zs-toast';
+    t.textContent = message;
+    wrap.appendChild(t);
+    setTimeout(function () {
+        t.style.transition = 'opacity 0.3s';
+        t.style.opacity = '0';
+        setTimeout(function () { t.remove(); }, 300);
+    }, 2200);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.qty-minus').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -75,5 +564,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

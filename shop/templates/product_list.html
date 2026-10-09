@@ -1,212 +1,571 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}{% if selected_category %}{{ selected_category }}{% else %}All Products{% endif %} | Vasanth Store{% endblock %}
+
 {% block content %}
 
-<div class="mb-3 text-center">
-    <a class="btn btn-outline-dark btn-sm m-1" href="{% url 'product_list' %}">All</a>
-    <a class="btn btn-outline-dark btn-sm m-1" href="{% url 'product_list' %}?category=Snacks">Snacks</a>
-    <a class="btn btn-outline-dark btn-sm m-1" href="{% url 'product_list' %}?category=Groceries">Groceries</a>
-    <a class="btn btn-outline-dark btn-sm m-1" href="{% url 'product_list' %}?category=Juices">Juices</a>
-    <a class="btn btn-outline-dark btn-sm m-1" href="{% url 'product_list' %}?category=Stationery">Stationery</a>
-    <a class="btn btn-outline-dark btn-sm m-1" href="{% url 'product_list' %}?category=Oil">Oil</a>
-</div>
+<form id="csrf-holder" method="post" style="display:none;">
+    {% csrf_token %}
+</form>
 
-<form method="post" action="{% url 'add_selected_to_cart' %}">
-{% csrf_token %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Our Products</h2>
-    <button type="submit" class="btn btn-primary">🛒 Add Selected to Cart</button>
-</div>
+{{ cart_qty|json_script:"cart-qty" }}
 
-<div class="row row-cols-2 row-cols-md-4 g-3">
+<div class="shop-layout">
 
-    {% for product in products %}
+    <!-- ================= CATEGORY SIDEBAR ================= -->
+    <aside class="cat-sidebar">
+        <h6 class="side-title">Categories</h6>
+        <div class="list-group">
 
-    <div class="col">
+            <a href="{% url 'product_list' %}"
+               class="list-group-item list-group-item-action {% if not selected_category %}active{% endif %}">
+                <span class="cat-ico">🗂️</span>
+                <span class="cat-name">All</span>
+            </a>
 
-        <div class="card h-100 shadow-sm product-card">
+            {% for group in category_groups %}
 
-            <!-- Product Select Checkbox -->
-            <div class="product-checkbox">
-                <input type="checkbox"
-                       name="selected_products"
-                       value="{{ product.id }}"
-                       title="Select {{ product.name }}">
-            </div>
+            <a href="{% url 'product_list' %}?category={{ group.name|urlencode }}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if selected_category|lower == group.name|lower %}active{% endif %}">
+                <span class="cat-ico">{% if group.name == 'Snacks' %}🍿{% elif group.name == 'Groceries' %}🛒{% elif group.name == 'Juices' %}🧃{% elif group.name == 'Stationery' %}✏️{% elif group.name == 'Oil' %}🫒{% else %}📦{% endif %}</span>
+                <span class="cat-name">{{ group.name }}</span>
+                <span class="small cat-arrow">{% if selected_category|lower == group.name|lower %}▴{% else %}▾{% endif %}</span>
+            </a>
 
-            <div class="img-box">
-                <div class="img-scroll">
-                    {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
-                    {% else %}
-                    <img src="https://via.placeholder.com/200x150?text=No+Image" alt="No image">
+            {% if selected_category|lower == group.name|lower %}
+                {% for p in group.products %}
+                <a href="{% url 'product_detail' p.id %}"
+                   class="list-group-item list-group-item-action small ps-4 cat-sub-item">
+                    {{ p.name }}
+                </a>
+                {% endfor %}
+            {% endif %}
+
+            {% endfor %}
+
+        </div>
+    </aside>
+
+    <!-- ================= PRODUCTS ================= -->
+    <main class="shop-main">
+
+        <div class="shop-head">
+            <h2 class="shop-title">{% if selected_category %}{{ selected_category }}{% else %}All Products{% endif %}</h2>
+        </div>
+
+        {% if q %}
+        <p class="text-muted small mb-2 text-center">Results for "{{ q }}"</p>
+        {% endif %}
+
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 row-cols-xxl-5 g-2 g-md-3">
+
+            {% for product in products %}
+
+            <div class="col" data-name="{{ product.name|lower }}">
+
+                <div class="p-card zs-card zs-card-hover {% if product.stock_quantity <= 0 %}is-out{% endif %}">
+
+                    {% if product.discount_percent %}
+                    <span class="zs-off p-off">{{ product.discount_percent }}% OFF</span>
                     {% endif %}
 
-                    {% for img in product.images.all %}
-                    <img src="{{ img.image.url }}" alt="{{ product.name }}">
-                    {% endfor %}
+                    <div class="p-img">
+                        <a href="{% url 'product_detail' product.id %}">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                            {% else %}
+                            <div class="p-noimg">🛍️</div>
+                            {% endif %}
+                        </a>
+
+                        {% if product.stock_quantity > 0 %}
+                        <div class="cart-ctl" data-id="{{ product.id }}" data-url="{% url 'cart_ajax' product.id %}">
+                            <button type="button" class="ctl-add">ADD</button>
+                            <div class="ctl-qty">
+                                <button type="button" class="ctl-minus">−</button>
+                                <span class="ctl-num">1</span>
+                                <button type="button" class="ctl-plus">+</button>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="out-tag">Out of stock</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="p-body">
+                        <a href="{% url 'product_detail' product.id %}" class="p-name">{{ product.name }}</a>
+                        <div class="p-cat">{{ product.category }}</div>
+
+                        <div class="p-price-row">
+                            <span class="zs-price">₹{{ product.price|floatformat:"-2" }}</span>
+                            {% if product.discount_percent %}
+                            <span class="zs-mrp">₹{{ product.mrp|floatformat:"-2" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% empty %}
+
+            <div class="col-12">
+                <div class="zs-card empty-box">
+                    <div class="fs-1">🛍️</div>
+                    <div class="fw-semibold">
+                        {% if q %}No products found for "{{ q }}".{% else %}No products found in this category.{% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="card-body p-2 d-flex flex-column">
-
-                <p class="mb-1 small text-muted">
-                    {{ product.category.name }}
-                </p>
-
-                <h6 class="card-title mb-1">
-                    {{ product.name }}
-                </h6>
-
-                <p class="fw-bold mb-2">
-                    ₹{{ product.price }}
-                </p>
-
-                {% if product.stock_quantity == 0 %}
-                <span class="badge bg-danger mb-2">Out of stock</span>
-                {% elif product.stock_quantity <= 5 %}
-                <span class="badge bg-warning text-dark mb-2">Only {{ product.stock_quantity }} left!</span>
-                {% else %}
-                <span class="badge bg-success mb-2">In stock: {{ product.stock_quantity }}</span>
-                {% endif %}
-
-                 {% if product.expiry_date %}
-                <p class="small text-muted mb-2">
-                    Exp: {{ product.expiry_date|date:"d M Y" }}
-                </p>
-                {% endif %} 
-
-                {% if product.stock_quantity > 0 %}
-                <form method="post" action="{% url 'add_to_cart' product.id %}" class="mt-auto">
-    {% csrf_token %}
-    <div class="d-flex gap-1 mb-1">
-        <button type="button" class="btn btn-sm btn-outline-secondary qty-minus">-</button>
-        <input type="number" name="quantity" value="1" min="1"
-               class="form-control form-control-sm text-center qty-input">
-        <button type="button" class="btn btn-sm btn-outline-secondary qty-plus">+</button>
-    </div>
-
-    <div class="d-flex gap-1">
-        <a href="{% url 'place_order' product.id %}"
-           class="btn btn-sm btn-success flex-fill">
-            Order Now
-        </a>
-        <button type="submit" class="btn btn-primary btn-sm flex-fill">
-            Add to Cart
-        </button>
-    </div>
-</form>
-                {% else %}
-                <button class="btn btn-sm btn-secondary w-100 mt-auto" disabled>Out of stock</button>
-                {% endif %}
-
-            </div>
+            {% endfor %}
 
         </div>
 
-    </div>
+        <div id="no-results" class="zs-card empty-box mt-3" style="display: none;">
+            <div class="fs-1">🔍</div>
+            <div class="fw-semibold">No products found. Vera peru la try pannunga.</div>
+        </div>
 
-    {% empty %}
-
-    <p class="text-center">
-        No products found in this category.
-    </p>
-
-    {% endfor %}
+    </main>
 
 </div>
 
-</form>
+<!-- ================= LIVE FLOATING CART BAR ================= -->
+<a href="{% url 'view_cart' %}" id="cart-bar" class="live-cart-bar" style="display: none;">
+    <span>🛒 <span id="cart-count">{{ cart_count }}</span> items</span>
+    <span>View cart ➜</span>
+</a>
 
 
 <style>
+body { overflow-x: hidden; }
 
-.product-card {
-    border-radius: 10px;
-    overflow: hidden;
-    transition: transform 0.15s ease;
-    position: relative;
-}
+/* base.html la irukkura static floating bar ah ingae hide (inga live bar irukku) */
+.zs-float-cart { display: none !important; }
 
-/* Product Checkbox */
-.product-checkbox {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-    background: white;
-    border-radius: 5px;
-    padding: 2px;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
-}
+/* Header height JS la set aagum, sidebar header kku keela sticky ah nikkum */
+:root { --hdr-h: 70px; }
 
-.product-checkbox input {
-    width: 20px;
-    height: 20px;
-    margin: 0;
-    cursor: pointer;
-}
-
-.product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.12) !important;
-}
-
-.img-box {
-    background: #f8f9fa;
-    padding: 12px;
-    position: relative;
-    cursor: pointer;
-}
-
-.img-scroll {
+/* ---------- LAYOUT ---------- */
+.shop-layout {
     display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 12px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-top: -1.5rem;
+    min-height: calc(100vh - var(--hdr-h));
 }
 
-.img-scroll::-webkit-scrollbar {
-    display: none;
+/* ---------- SIDEBAR (desktop) ---------- */
+.cat-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--zs-border);
+    padding: 20px 14px;
+    position: sticky;
+    top: var(--hdr-h);
+    align-self: flex-start;
+    max-height: calc(100vh - var(--hdr-h));
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+.side-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    padding-left: 6px;
+}
+.cat-sidebar .list-group { gap: 4px; border-radius: 0; }
+.cat-sidebar .list-group-item {
+    border: none;
+    border-radius: 10px !important;
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 10px 12px;
+    color: var(--zs-text);
+    transition: all 0.15s ease;
+}
+.cat-sidebar .list-group-item:hover {
+    background: var(--zs-green-soft);
+    color: var(--zs-green-dark);
+}
+.cat-sidebar .list-group-item.active {
+    background: var(--zs-green);
+    color: #fff;
+    font-weight: 600;
+}
+.cat-sidebar .cat-sub-item {
+    background: #f8f9fa;
+    font-weight: 400;
+    padding: 7px 12px 7px 24px;
 }
 
-.img-scroll img {
+/* Desktop la icon hide */
+.cat-ico { display: none; }
+
+/* ---------- MAIN ---------- */
+.shop-main {
+    flex: 1;
+    min-width: 0;
+    padding: 20px 24px 30px;
+}
+.shop-head {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 16px;
+}
+.shop-title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+
+.empty-box { text-align: center; padding: 40px 16px; color: var(--zs-muted); }
+
+/* ---------- PRODUCT CARD ---------- */
+.p-card {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.p-off {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+    border-radius: 6px;
+}
+.p-img {
+    position: relative;
+    background: #fff;
+    padding: 18px 12px 24px;
+}
+.p-img img {
     display: block;
     width: 100%;
-    flex-shrink: 0;
-    scroll-snap-align: center;
-    height: 140px;
+    height: 135px;
     object-fit: contain;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 8px;
+}
+.p-noimg {
+    height: 135px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    background: var(--zs-bg);
+    border-radius: 10px;
+}
+.p-body {
+    padding: 4px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.p-name {
+    color: var(--zs-text);
+    font-weight: 600;
+    font-size: 0.88rem;
+    line-height: 1.25;
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.2em;
+}
+.p-name:hover { color: var(--zs-green); }
+.p-cat { font-size: 0.72rem; color: var(--zs-muted); margin: 2px 0 6px; }
+.p-price-row {
+    margin-top: auto;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.p-price-row .zs-price { font-size: 1.02rem; }
+
+/* Out of stock */
+.p-card.is-out .p-img img,
+.p-card.is-out .p-noimg { opacity: 0.4; filter: grayscale(1); }
+.p-card.is-out .p-name { color: var(--zs-muted); }
+.out-tag {
+    position: absolute;
+    right: 10px;
+    bottom: -14px;
+    z-index: 6;
+    background: #e9ecef;
+    color: #6c757d;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 7px 10px;
+    border-radius: 9px;
 }
 
+/* ---------- ADD / - 1 + CONTROL (image bottom-right) ---------- */
+.cart-ctl {
+    position: absolute;
+    right: 10px;
+    bottom: -14px;
+    width: 76px;
+    z-index: 6;
+}
+.ctl-add {
+    width: 100%;
+    height: 32px;
+    background: #fff;
+    color: var(--zs-green);
+    border: 1.5px solid var(--zs-green);
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.4px;
+    box-shadow: 0 3px 8px rgba(12, 131, 31, 0.18);
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+.ctl-add:hover { background: var(--zs-green); color: #fff; }
+.ctl-qty {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    background: var(--zs-green);
+    color: #fff;
+    border-radius: 9px;
+    overflow: hidden;
+    box-shadow: 0 3px 8px rgba(12, 131, 31, 0.3);
+}
+.ctl-qty button {
+    background: transparent;
+    border: 0;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    width: 26px;
+    height: 32px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+}
+.ctl-qty button:hover { background: var(--zs-green-dark); }
+.ctl-num { font-weight: 700; font-size: 0.88rem; }
+.cart-ctl.in-cart .ctl-add { display: none; }
+.cart-ctl.in-cart .ctl-qty { display: flex; }
+
+/* ---------- LIVE FLOATING CART BAR ---------- */
+.live-cart-bar {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 1035;
+    background: var(--zs-green);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 12px 20px;
+    border-radius: 30px;
+    box-shadow: 0 8px 22px rgba(12, 131, 31, 0.45);
+    align-items: center;
+    gap: 18px;
+    animation: zsSlideUp 0.35s ease;
+}
+.live-cart-bar:hover { background: var(--zs-green-dark); color: #fff; }
+
+/* ---------- MOBILE: left category rail + 2 column products ---------- */
+@media (max-width: 767px) {
+    .shop-layout {
+        flex-direction: row;
+        margin-top: 0;
+        min-height: calc(100vh - var(--hdr-h) - 70px);
+    }
+
+    .cat-sidebar {
+        width: 76px;
+        padding: 0;
+        background: #f8f9fa;
+        border-right: 1px solid var(--zs-border);
+        position: sticky;
+        top: var(--hdr-h);
+        align-self: flex-start;
+        max-height: calc(100vh - var(--hdr-h) - 70px);
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+    .cat-sidebar::-webkit-scrollbar { display: none; }
+
+    /* Mobile la sub-items fully hide, categories mattum */
+    .cat-sidebar .side-title,
+    .cat-sidebar .cat-sub-item,
+    .cat-sidebar .cat-arrow { display: none !important; }
+
+    .cat-sidebar .list-group { flex-direction: column; border-radius: 0; gap: 0; }
+    .cat-sidebar .list-group-item {
+        display: flex;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center;
+        padding: 12px 4px;
+        font-size: 0.7rem;
+        line-height: 1.2;
+        border-radius: 0 !important;
+        border: 0;
+        border-bottom: 1px solid var(--zs-border);
+        border-left: 3px solid transparent;
+        background: transparent;
+        color: #495057;
+    }
+    .cat-sidebar .list-group-item.active {
+        background: #fff;
+        color: var(--zs-green);
+        font-weight: 700;
+        border-left-color: var(--zs-green);
+    }
+    .cat-ico {
+        display: block;
+        font-size: 1.45rem;
+        line-height: 1.2;
+        margin-bottom: 3px;
+    }
+
+    .shop-main { padding: 10px 8px 24px; }
+    .shop-title { font-size: 1.05rem; }
+
+    .p-img { padding: 16px 8px 22px; }
+    .p-img img, .p-noimg { height: 100px; }
+    .p-body { padding: 4px 9px 10px; }
+    .p-name { font-size: 0.8rem; }
+    .cart-ctl, .out-tag { right: 8px; }
+    .cart-ctl { width: 70px; }
+
+    .live-cart-bar {
+        left: 12px;
+        right: 12px;
+        bottom: 78px;
+        justify-content: space-between;
+        border-radius: 14px;
+    }
+}
 </style>
 
-<<script>
-document.querySelectorAll('.img-box').forEach(function (box) {
-    const scrollArea = box.querySelector('.img-scroll');
-    const images = scrollArea.querySelectorAll('img');
+<script>
+// Header height ah measure panni sidebar sticky position set pannum
+(function () {
+    const hdr = document.querySelector('.zs-header');
+    function setH() {
+        if (hdr) document.documentElement.style.setProperty('--hdr-h', hdr.offsetHeight + 'px');
+    }
+    setH();
+    window.addEventListener('resize', setH);
+    window.addEventListener('load', setH);
+})();
 
-    if (images.length <= 1) return;
+// ADD / - 1 + cart logic
+(function () {
+    const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const qtyMap = JSON.parse(document.getElementById('cart-qty').textContent || '{}');
+    const bar = document.getElementById('cart-bar');
+    const countEl = document.getElementById('cart-count');
+    const cartUrl = "{% url 'view_cart' %}";
 
-    let index = 0;
-
-    setInterval(function () {
-        index = (index + 1) % images.length;
-        const imgWidth = scrollArea.clientWidth;
-        scrollArea.scrollTo({
-            left: index * imgWidth,
-            behavior: 'smooth'
+    // Header cart badge + mobile bottom nav badge ah live ah update pannum
+    function updateNavBadges(n) {
+        document.querySelectorAll('.zs-pill-cart .badge').forEach(function (b) {
+            b.textContent = n;
         });
-    }, 2000);
-});
+        document.querySelectorAll('.zs-bn-item[href="' + cartUrl + '"]').forEach(function (a) {
+            let b = a.querySelector('.badge');
+            if (n > 0) {
+                if (!b) {
+                    b = document.createElement('span');
+                    b.className = 'badge rounded-pill';
+                    a.appendChild(b);
+                }
+                b.textContent = n;
+            } else if (b) {
+                b.remove();
+            }
+        });
+    }
+
+    function setCount(n) {
+        countEl.textContent = n;
+        bar.style.display = n > 0 ? 'flex' : 'none';
+        updateNavBadges(n);
+    }
+
+    function setQty(ctl, qty) {
+        ctl.querySelector('.ctl-num').textContent = qty;
+        ctl.classList.toggle('in-cart', qty > 0);
+    }
+
+    function send(ctl, action) {
+        const body = new FormData();
+        body.append('action', action);
+        fetch(ctl.dataset.url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf },
+            body: body
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) {
+                showToast(data.error);
+            } else if (action === 'add') {
+                showToast('Added to cart ✓');
+            }
+            setQty(ctl, data.qty);
+            setCount(data.cart_count);
+        })
+        .catch(function () { showToast('Something went wrong. Please try again.'); });
+    }
+
+    document.querySelectorAll('.cart-ctl').forEach(function (ctl) {
+        setQty(ctl, qtyMap[ctl.dataset.id] || 0);
+        ctl.querySelector('.ctl-add').addEventListener('click', function () { send(ctl, 'add'); });
+        ctl.querySelector('.ctl-plus').addEventListener('click', function () { send(ctl, 'increase'); });
+        ctl.querySelector('.ctl-minus').addEventListener('click', function () { send(ctl, 'decrease'); });
+    });
+
+    setCount({{ cart_count|default:0 }});
+})();
+
+// Live search: header search box la type panna panna, peru intha letters la aarambikkura products mattum kaattum
+(function () {
+    const input = document.querySelector('.zs-search input[name="q"]');
+    const noResults = document.getElementById('no-results');
+    if (!input) return;
+    const form = input.closest('form');
+
+    function filterProducts() {
+        const term = input.value.trim().toLowerCase();
+        let visible = 0;
+
+        document.querySelectorAll('[data-name]').forEach(function (col) {
+            const match = col.dataset.name.startsWith(term);
+            col.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+
+        if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    input.addEventListener('input', filterProducts);
+
+    // Enter / search button click panna page reload aagaama same filter run aagum
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            filterProducts();
+        });
+    }
+
+    filterProducts();
+})();
 </script>
 
 {% endblock %}

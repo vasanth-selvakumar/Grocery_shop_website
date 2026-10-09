@@ -1,18 +1,312 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sign Up</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign Up | Vasanth Store</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --green: #0c831f;
+    --green-dark: #096316;
+    --green-soft: #e8f5e9;
+    --text: #1c1c1c;
+    --muted: #6c757d;
+    --border: #dfe3e7;
+    --bg: #f4f6f8;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+    background: linear-gradient(135deg, #0c831f, #2ec26a);
+    color: #fff;
+    text-align: center;
+    padding: calc(28px + env(safe-area-inset-top)) 20px 62px;
+}
+.logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 12px;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+.hero h1 { margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: 0.3px; }
+.hero p { margin: 4px 0 0; font-size: 0.82rem; opacity: 0.9; }
+
+/* ---------- Card ---------- */
+.card {
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: -40px 16px 0;
+    padding: 24px 20px 22px;
+    max-width: 480px;
+}
+@media (min-width: 520px) {
+    .card { margin-left: auto; margin-right: auto; }
+}
+.card h2 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 700; }
+.card .sub { margin: 0 0 20px; font-size: 0.84rem; color: var(--muted); }
+
+.alert {
+    background: #fde8ea;
+    color: #c62828;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+/* ---------- Fields ---------- */
+.field { margin-bottom: 15px; }
+.field > label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.input-wrap { position: relative; }
+.input-wrap .ico {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.05rem;
+    pointer-events: none;
+}
+.input-wrap input,
+.input-wrap select,
+.input-wrap textarea {
+    width: 100%;
+    height: 52px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 0 14px 0 44px;
+    font-family: inherit;
+    font-size: 16px; /* 16px = phone la auto zoom aagadhu */
+    background: #fff;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input-wrap textarea { height: auto; min-height: 90px; padding-top: 14px; }
+.input-wrap input:focus,
+.input-wrap select:focus,
+.input-wrap textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(12, 131, 31, 0.14);
+}
+.input-wrap.has-toggle input { padding-right: 52px; }
+.toggle-pw {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.field-err { color: #c62828; font-size: 0.78rem; margin-top: 5px; font-weight: 500; }
+.field-help { color: var(--muted); font-size: 0.72rem; margin-top: 5px; line-height: 1.45; }
+.field-help ul { margin: 0; padding-left: 16px; }
+
+/* ---------- Two column (first / last name) mobile la kooda pakkathula ---------- */
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+
+/* ---------- Button ---------- */
+.btn-submit {
+    width: 100%;
+    height: 54px;
+    border: none;
+    border-radius: 14px;
+    background: var(--green);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(12, 131, 31, 0.32);
+    transition: all 0.15s ease;
+    margin-top: 6px;
+}
+.btn-submit:hover { background: var(--green-dark); }
+.btn-submit:active { transform: scale(0.98); }
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin: 20px 0 14px;
+}
+.divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+.btn-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 52px;
+    border: 2px solid var(--green);
+    border-radius: 14px;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.btn-login:hover { background: var(--green-soft); color: var(--green-dark); }
+
+.perks {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 22px 16px 0;
+    font-size: 0.74rem;
+    color: var(--muted);
+}
+.back {
+    display: block;
+    text-align: center;
+    margin: 16px 0 calc(24px + env(safe-area-inset-bottom));
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--green);
+    text-decoration: none;
+}
+.back:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
-<div class="container mt-5" style="max-width: 500px;">
-    <h3>Create Account</h3>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-success">Sign Up</button>
-    </form>
+
+<div class="hero">
+    <div class="logo">🛒</div>
+    <h1>Vasanth Store</h1>
+    <p>Your Daily Needs, Delivered</p>
 </div>
+
+<div class="card">
+    <h2>Create your account 🎉</h2>
+    <p class="sub">Oru minute la mudinjidum. Apram order panna aarambinga.</p>
+
+    {% if form.non_field_errors %}
+    <div class="alert">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% for field in form %}
+
+            {# first_name and last_name rendu um pakkathula, mathadhu full width #}
+            {% if field.name == 'first_name' %}<div class="row2">{% endif %}
+
+            <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <div class="input-wrap">
+                    <span class="ico">{% if field.name == 'username' %}👤{% elif field.name == 'first_name' or field.name == 'last_name' %}🙂{% elif field.name == 'email' %}✉️{% elif 'mobile' in field.name or 'phone' in field.name %}📱{% elif 'password' in field.name %}🔒{% else %}📝{% endif %}</span>
+                    {{ field }}
+                </div>
+                {% for e in field.errors %}<div class="field-err">{{ e }}</div>{% endfor %}
+                {% if field.help_text %}<div class="field-help">{{ field.help_text|safe }}</div>{% endif %}
+            </div>
+
+            {% if field.name == 'last_name' %}</div>{% endif %}
+
+        {% endfor %}
+
+        <button type="submit" class="btn-submit">Create account</button>
+    </form>
+
+    <div class="divider">Already account irukka?</div>
+    <a href="{% url 'login' %}" class="btn-login">Login</a>
+</div>
+
+<div class="perks">
+    <span>⚡ Fast delivery</span>
+    <span>💵 Cash on delivery</span>
+    <span>✅ Quality products</span>
+</div>
+
+<a href="{% url 'home' %}" class="back">← Back to store</a>
+
+<script>
+(function () {
+    // Phone keyboard ku match: field name paathu type / keypad set pannum
+    document.querySelectorAll('.input-wrap input').forEach(function (inp) {
+        const n = (inp.name || '').toLowerCase();
+
+        if (n.indexOf('mobile') > -1 || n.indexOf('phone') > -1) {
+            inp.type = 'tel';
+            inp.setAttribute('inputmode', 'numeric');
+            inp.setAttribute('autocomplete', 'tel');
+            if (!inp.placeholder) inp.placeholder = '10 digit mobile number';
+        } else if (n === 'email') {
+            inp.type = 'email';
+            inp.setAttribute('autocomplete', 'email');
+            if (!inp.placeholder) inp.placeholder = 'name@example.com';
+        } else if (n === 'username') {
+            inp.setAttribute('autocomplete', 'username');
+            inp.setAttribute('autocapitalize', 'none');
+            inp.setAttribute('autocorrect', 'off');
+        } else if (n === 'first_name') {
+            inp.setAttribute('autocomplete', 'given-name');
+        } else if (n === 'last_name') {
+            inp.setAttribute('autocomplete', 'family-name');
+        } else if (n.indexOf('password') > -1) {
+            inp.setAttribute('autocomplete', 'new-password');
+
+            // Password field ku 👁️ show/hide button
+            const wrap = inp.closest('.input-wrap');
+            wrap.classList.add('has-toggle');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'toggle-pw';
+            btn.setAttribute('aria-label', 'Show password');
+            btn.textContent = '👁️';
+            btn.addEventListener('click', function () {
+                const show = inp.type === 'password';
+                inp.type = show ? 'text' : 'password';
+                btn.textContent = show ? '🙈' : '👁️';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            });
+            wrap.appendChild(btn);
+        }
+    });
+})();
+</script>
+
 </body>
 </html>
