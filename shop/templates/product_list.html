@@ -73,7 +73,6 @@
 
                     <div class="p-body">
                         <a href="{% url 'product_detail' product.id %}" class="p-name">{{ product.name }}</a>
-                        <div class="p-cat">{{ product.category }}</div>
 
                         <div class="p-price-row">
                             <span class="zs-price">₹{{ product.price|floatformat:"-2" }}</span>
@@ -255,9 +254,9 @@ body { overflow-x: hidden; }
     white-space: normal;
     word-break: break-word;
     overflow: visible;
+    margin-bottom: 6px;
 }
 .p-name:hover { color: var(--zs-green); }
-.p-cat { font-size: 0.72rem; color: var(--zs-muted); margin: 2px 0 6px; }
 .p-price-row {
     margin-top: auto;
     display: flex;
