@@ -100,7 +100,7 @@ body {
     height: 52px;
     border: 1.5px solid var(--border);
     border-radius: 14px;
-    padding: 0 48px 0 44px;
+    padding: 0 14px 0 44px;
     font-family: inherit;
     font-size: 16px; /* 16px = phone la auto zoom aagadhu */
     background: #fff;
@@ -111,18 +111,6 @@ body {
 .input-wrap input:focus {
     border-color: var(--green);
     box-shadow: 0 0 0 4px rgba(12, 131, 31, 0.14);
-}
-.toggle-pw {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: none;
-    font-size: 1.1rem;
-    cursor: pointer;
 }
 .field-err { color: #c62828; font-size: 0.78rem; margin-top: 5px; }
 
@@ -175,20 +163,11 @@ body {
 }
 .btn-signup:hover { background: var(--green-soft); color: var(--green-dark); }
 
-/* ---------- Footer links ---------- */
-.perks {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin: 22px 16px 0;
-    font-size: 0.74rem;
-    color: var(--muted);
-}
+/* ---------- Footer link ---------- */
 .back {
     display: block;
     text-align: center;
-    margin: 16px 0 calc(24px + env(safe-area-inset-bottom));
+    margin: 22px 0 calc(24px + env(safe-area-inset-bottom));
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--green);
@@ -207,7 +186,7 @@ body {
 
 <div class="card">
     <h2>Welcome back 👋</h2>
-    <p class="sub">Login pannitu order panna aarambinga.</p>
+    <p class="sub">Login to start ordering.</p>
 
     {% if form.non_field_errors %}
     <div class="alert">
@@ -225,7 +204,7 @@ body {
                 <span class="ico">👤</span>
                 <input type="text" name="username" id="id_username"
                        value="{{ form.username.value|default:'' }}"
-                       placeholder="Unga username"
+                       placeholder="Enter your username"
                        autocomplete="username" autocapitalize="none" autocorrect="off" required>
             </div>
             {% for e in form.username.errors %}<div class="field-err">{{ e }}</div>{% endfor %}
@@ -236,9 +215,8 @@ body {
             <div class="input-wrap">
                 <span class="ico">🔒</span>
                 <input type="password" name="password" id="id_password"
-                       placeholder="Unga password"
+                       placeholder="Enter your password"
                        autocomplete="current-password" required>
-                <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password">👁️</button>
             </div>
             {% for e in form.password.errors %}<div class="field-err">{{ e }}</div>{% endfor %}
         </div>
@@ -246,30 +224,11 @@ body {
         <button type="submit" class="btn-login">Login</button>
     </form>
 
-    <div class="divider">Pudhusa vandheengala?</div>
+    <div class="divider">New here?</div>
     <a href="{% url 'signup' %}" class="btn-signup">Create new account</a>
 </div>
 
-<div class="perks">
-    <span>⚡ Fast delivery</span>
-    <span>💵 Cash on delivery</span>
-    <span>✅ Quality products</span>
-</div>
-
 <a href="{% url 'home' %}" class="back">← Back to store</a>
-
-<script>
-(function () {
-    const pw = document.getElementById('id_password');
-    const btn = document.getElementById('togglePw');
-    btn.addEventListener('click', function () {
-        const show = pw.type === 'password';
-        pw.type = show ? 'text' : 'password';
-        btn.textContent = show ? '🙈' : '👁️';
-        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-    });
-})();
-</script>
 
 </body>
 </html>

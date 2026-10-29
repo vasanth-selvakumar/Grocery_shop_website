@@ -28,19 +28,10 @@
 
             <a href="{% url 'product_list' %}?category={{ group.name|urlencode }}"
                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if selected_category|lower == group.name|lower %}active{% endif %}">
-                <span class="cat-ico">{% if group.name == 'Snacks' %}🍿{% elif group.name == 'Groceries' %}🛒{% elif group.name == 'Juices' %}🧃{% elif group.name == 'Stationery' %}✏️{% elif group.name == 'Oil' %}🫒{% else %}📦{% endif %}</span>
+                <span class="cat-ico">{% if group.name == 'Snacks' %}🍿{% elif group.name == 'Groceries' %}🛒{% elif group.name == 'Juices' %}🧃{% elif group.name == 'Stationery' %}✏️{% elif group.name == 'Oil' %}🫒{% elif group.name == 'Chocolates' %}🍫{% elif group.name == 'Hair and Face Care' %}🧴{% elif group.name == 'Household Essentials' %}🏠{% elif group.name == 'Masala Items' %}🌶️{% elif group.name == 'Poojai Items' %}🪔{% elif group.name == 'Sanitary Pads' %}🧻{% elif group.name == 'Soap and Powder' %}🧼{% else %}📦{% endif %}</span>
                 <span class="cat-name">{{ group.name }}</span>
                 <span class="small cat-arrow">{% if selected_category|lower == group.name|lower %}▴{% else %}▾{% endif %}</span>
             </a>
-
-            {% if selected_category|lower == group.name|lower %}
-                {% for p in group.products %}
-                <a href="{% url 'product_detail' p.id %}"
-                   class="list-group-item list-group-item-action small ps-4 cat-sub-item">
-                    {{ p.name }}
-                </a>
-                {% endfor %}
-            {% endif %}
 
             {% endfor %}
 
@@ -78,6 +69,18 @@
                             <div class="p-noimg">🛍️</div>
                             {% endif %}
                         </a>
+                    </div>
+
+                    <div class="p-body">
+                        <a href="{% url 'product_detail' product.id %}" class="p-name">{{ product.name }}</a>
+                        <div class="p-cat">{{ product.category }}</div>
+
+                        <div class="p-price-row">
+                            <span class="zs-price">₹{{ product.price|floatformat:"-2" }}</span>
+                            {% if product.discount_percent %}
+                            <span class="zs-mrp">₹{{ product.mrp|floatformat:"-2" }}</span>
+                            {% endif %}
+                        </div>
 
                         {% if product.stock_quantity > 0 %}
                         <div class="cart-ctl" data-id="{{ product.id }}" data-url="{% url 'cart_ajax' product.id %}">
@@ -91,18 +94,6 @@
                         {% else %}
                         <div class="out-tag">Out of stock</div>
                         {% endif %}
-                    </div>
-
-                    <div class="p-body">
-                        <a href="{% url 'product_detail' product.id %}" class="p-name">{{ product.name }}</a>
-                        <div class="p-cat">{{ product.category }}</div>
-
-                        <div class="p-price-row">
-                            <span class="zs-price">₹{{ product.price|floatformat:"-2" }}</span>
-                            {% if product.discount_percent %}
-                            <span class="zs-mrp">₹{{ product.mrp|floatformat:"-2" }}</span>
-                            {% endif %}
-                        </div>
                     </div>
 
                 </div>
@@ -126,24 +117,18 @@
 
         <div id="no-results" class="zs-card empty-box mt-3" style="display: none;">
             <div class="fs-1">🔍</div>
-            <div class="fw-semibold">No products found. Vera peru la try pannunga.</div>
+            <div class="fw-semibold">No products found. Try a different name.</div>
         </div>
 
     </main>
 
 </div>
 
-<!-- ================= LIVE FLOATING CART BAR ================= -->
-<a href="{% url 'view_cart' %}" id="cart-bar" class="live-cart-bar" style="display: none;">
-    <span>🛒 <span id="cart-count">{{ cart_count }}</span> items</span>
-    <span>View cart ➜</span>
-</a>
-
 
 <style>
 body { overflow-x: hidden; }
 
-/* base.html la irukkura static floating bar ah ingae hide (inga live bar irukku) */
+/* base.html la irukkura static floating cart bar ah hide pannum */
 .zs-float-cart { display: none !important; }
 
 /* Header height JS la set aagum, sidebar header kku keela sticky ah nikkum */
@@ -197,11 +182,6 @@ body { overflow-x: hidden; }
     color: #fff;
     font-weight: 600;
 }
-.cat-sidebar .cat-sub-item {
-    background: #f8f9fa;
-    font-weight: 400;
-    padding: 7px 12px 7px 24px;
-}
 
 /* Desktop la icon hide */
 .cat-ico { display: none; }
@@ -241,7 +221,7 @@ body { overflow-x: hidden; }
 .p-img {
     position: relative;
     background: #fff;
-    padding: 18px 12px 24px;
+    padding: 18px 12px 8px;
 }
 .p-img img {
     display: block;
@@ -264,17 +244,17 @@ body { overflow-x: hidden; }
     flex-direction: column;
     flex: 1;
 }
+/* Full name theriyum: clamp remove, wrap aagum */
 .p-name {
     color: var(--zs-text);
     font-weight: 600;
     font-size: 0.88rem;
     line-height: 1.25;
     text-decoration: none;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 2.2em;
+    display: block;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
 }
 .p-name:hover { color: var(--zs-green); }
 .p-cat { font-size: 0.72rem; color: var(--zs-muted); margin: 2px 0 6px; }
@@ -292,25 +272,21 @@ body { overflow-x: hidden; }
 .p-card.is-out .p-noimg { opacity: 0.4; filter: grayscale(1); }
 .p-card.is-out .p-name { color: var(--zs-muted); }
 .out-tag {
-    position: absolute;
-    right: 10px;
-    bottom: -14px;
-    z-index: 6;
+    margin-top: 8px;
+    text-align: center;
     background: #e9ecef;
     color: #6c757d;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
     padding: 7px 10px;
     border-radius: 9px;
 }
 
-/* ---------- ADD / - 1 + CONTROL (image bottom-right) ---------- */
+/* ---------- ADD / - 1 + CONTROL (card kku keela, full width) ---------- */
 .cart-ctl {
-    position: absolute;
-    right: 10px;
-    bottom: -14px;
-    width: 76px;
-    z-index: 6;
+    position: static;
+    width: 100%;
+    margin-top: 8px;
 }
 .ctl-add {
     width: 100%;
@@ -322,7 +298,6 @@ body { overflow-x: hidden; }
     font-weight: 700;
     font-size: 0.82rem;
     letter-spacing: 0.4px;
-    box-shadow: 0 3px 8px rgba(12, 131, 31, 0.18);
     transition: all 0.15s ease;
     cursor: pointer;
 }
@@ -336,7 +311,6 @@ body { overflow-x: hidden; }
     color: #fff;
     border-radius: 9px;
     overflow: hidden;
-    box-shadow: 0 3px 8px rgba(12, 131, 31, 0.3);
 }
 .ctl-qty button {
     background: transparent;
@@ -344,7 +318,7 @@ body { overflow-x: hidden; }
     color: #fff;
     font-size: 1.15rem;
     font-weight: 700;
-    width: 26px;
+    width: 36px;
     height: 32px;
     line-height: 1;
     padding: 0;
@@ -354,26 +328,6 @@ body { overflow-x: hidden; }
 .ctl-num { font-weight: 700; font-size: 0.88rem; }
 .cart-ctl.in-cart .ctl-add { display: none; }
 .cart-ctl.in-cart .ctl-qty { display: flex; }
-
-/* ---------- LIVE FLOATING CART BAR ---------- */
-.live-cart-bar {
-    position: fixed;
-    left: 20px;
-    bottom: 20px;
-    z-index: 1035;
-    background: var(--zs-green);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.92rem;
-    padding: 12px 20px;
-    border-radius: 30px;
-    box-shadow: 0 8px 22px rgba(12, 131, 31, 0.45);
-    align-items: center;
-    gap: 18px;
-    animation: zsSlideUp 0.35s ease;
-}
-.live-cart-bar:hover { background: var(--zs-green-dark); color: #fff; }
 
 /* ---------- MOBILE: left category rail + 2 column products ---------- */
 @media (max-width: 767px) {
@@ -397,9 +351,8 @@ body { overflow-x: hidden; }
     }
     .cat-sidebar::-webkit-scrollbar { display: none; }
 
-    /* Mobile la sub-items fully hide, categories mattum */
+    /* Mobile la title, arrow hide, categories mattum */
     .cat-sidebar .side-title,
-    .cat-sidebar .cat-sub-item,
     .cat-sidebar .cat-arrow { display: none !important; }
 
     .cat-sidebar .list-group { flex-direction: column; border-radius: 0; gap: 0; }
@@ -435,20 +388,10 @@ body { overflow-x: hidden; }
     .shop-main { padding: 10px 8px 24px; }
     .shop-title { font-size: 1.05rem; }
 
-    .p-img { padding: 16px 8px 22px; }
+    .p-img { padding: 16px 8px 6px; }
     .p-img img, .p-noimg { height: 100px; }
     .p-body { padding: 4px 9px 10px; }
     .p-name { font-size: 0.8rem; }
-    .cart-ctl, .out-tag { right: 8px; }
-    .cart-ctl { width: 70px; }
-
-    .live-cart-bar {
-        left: 12px;
-        right: 12px;
-        bottom: 78px;
-        justify-content: space-between;
-        border-radius: 14px;
-    }
 }
 </style>
 
@@ -468,8 +411,6 @@ body { overflow-x: hidden; }
 (function () {
     const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
     const qtyMap = JSON.parse(document.getElementById('cart-qty').textContent || '{}');
-    const bar = document.getElementById('cart-bar');
-    const countEl = document.getElementById('cart-count');
     const cartUrl = "{% url 'view_cart' %}";
 
     // Header cart badge + mobile bottom nav badge ah live ah update pannum
@@ -490,12 +431,6 @@ body { overflow-x: hidden; }
                 b.remove();
             }
         });
-    }
-
-    function setCount(n) {
-        countEl.textContent = n;
-        bar.style.display = n > 0 ? 'flex' : 'none';
-        updateNavBadges(n);
     }
 
     function setQty(ctl, qty) {
@@ -519,7 +454,7 @@ body { overflow-x: hidden; }
                 showToast('Added to cart ✓');
             }
             setQty(ctl, data.qty);
-            setCount(data.cart_count);
+            updateNavBadges(data.cart_count);
         })
         .catch(function () { showToast('Something went wrong. Please try again.'); });
     }
@@ -531,7 +466,7 @@ body { overflow-x: hidden; }
         ctl.querySelector('.ctl-minus').addEventListener('click', function () { send(ctl, 'decrease'); });
     });
 
-    setCount({{ cart_count|default:0 }});
+    updateNavBadges({{ cart_count|default:0 }});
 })();
 
 // Live search: header search box la type panna panna, peru intha letters la aarambikkura products mattum kaattum

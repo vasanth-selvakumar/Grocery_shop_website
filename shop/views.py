@@ -1,4 +1,5 @@
 import calendar
+import re
 from datetime import date, datetime, timedelta
 
 from django.db import transaction
@@ -7,6 +8,7 @@ from django.db.models import (
 )
 from django.db.models.functions import TruncDate
 from django.http import JsonResponse
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView
@@ -38,6 +40,20 @@ POPULAR_PER_CATEGORY = 2
 SHOP_NAME = 'Vasanth Store'
 SHOP_ADDRESS = 'Sittilarai'
 SHOP_PHONE = '8015180625'
+
+# Home page category icons: pudhu category vandha inga oru line add pannunga
+CATEGORY_ICONS = {
+    'Snacks': '🍿',
+    'Groceries': '🛒',
+    'Juices': '🧃',
+    'Stationery': '✏️',
+    'Oil': '🫒',
+    'Chocolates': '🍫',
+    'Masala Items': '🌶️',
+    'Sanitary Pads': '🧻',
+    'Soap and Powder': '🧼',
+}
+DEFAULT_CATEGORY_ICON = '📦'
 
 
 def get_cart_total(cart):
@@ -144,12 +160,14 @@ def home(request):
     offers.sort(key=lambda p: p.discount_percent, reverse=True)
     offers = offers[:8]
 
-    # Category icons
-    icons = {'Snacks': '🍿', 'Groceries': '🛒', 'Juices': '🧃', 'Stationery': '✏️', 'Oil': '🫒'}
+    # Category icons: CATEGORY_ICONS (mela top la irukku) la irundhu varum
     order = ['Snacks', 'Groceries', 'Juices', 'Stationery', 'Oil']
     names = set(Product.objects.values_list('category', flat=True))
     names = sorted(names, key=lambda n: (order.index(n) if n in order else len(order), n))
-    categories = [{'name': n, 'icon': icons.get(n, '📦')} for n in names]
+    categories = [
+        {'name': n, 'icon': CATEGORY_ICONS.get(n, DEFAULT_CATEGORY_ICON)}
+        for n in names
+    ]
 
     # Popular products: ovvoru category la irundhum latest in-stock products (POPULAR_PER_CATEGORY),
     # row la kalandhu varum (Snacks, Groceries, Juices, Stationery, Oil, thirumba Snacks...)
@@ -870,6 +888,67 @@ def my_orders(request):
     return render(request, 'my_orders.html', {'orders': orders})
 
 
+# ---------------- Pack size chooser (product detail page) ----------------
+
+SIZE_FACTORS = {
+    'kg': 1000, 'g': 1, 'gm': 1, 'gms': 1,
+    'l': 1000, 'lit': 1000, 'ltr': 1000, 'litre': 1000, 'liter': 1000,
+    'ml': 1,
+    'pcs': 1, 'pc': 1, 'pack': 1,
+}
+
+
+def size_sort_key(text):
+    """'1/2 L' -> 500, '1 L' -> 1000, '500 g' -> 500, 'Rs 10 pack' -> 0 (sorted by price after)."""
+    value = (text or '').lower().replace(' ', '')
+    match = re.match(r'^(?:(\d+)/(\d+)|(\d+(?:\.\d+)?))([a-z]*)', value)
+    if not match:
+        return 0
+    if match.group(1):
+        number = int(match.group(1)) / int(match.group(2))
+    else:
+        number = float(match.group(3))
+    return number * SIZE_FACTORS.get(match.group(4), 1)
+
+
+def get_siblings(product):
+    """All products in the same variant_group, smallest size first. Empty if no group."""
+    if not product.variant_group:
+        return []
+    siblings = list(
+        Product.objects.filter(variant_group=product.variant_group)
+        .prefetch_related('images')
+    )
+    siblings.sort(key=lambda p: (size_sort_key(p.chip_label), p.price))
+    return siblings
+
+
+def serialize_variant(product):
+    """Data the product detail page needs to switch sizes without a page reload."""
+    images = []
+    if product.image:
+        images.append(product.image.url)
+    for extra in product.images.all():
+        if extra.image:
+            images.append(extra.image.url)
+    mrp = float(product.mrp or product.price)
+    price = float(product.price)
+    return {
+        'id': product.pk,
+        'label': product.chip_label,
+        'pack_size': product.pack_size or product.chip_label,
+        'name': product.name,
+        'price': price,
+        'mrp': mrp,
+        'save': round(mrp - price),
+        'percent': product.discount_percent,
+        'unit_text': product.price_per_unit,
+        'stock': product.stock_quantity,
+        'images': images,
+        'url': reverse('product_detail', args=[product.pk]),
+    }
+
+
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'product_detail.html'
@@ -881,4 +960,11 @@ class ProductDetailView(DetailView):
             Product.objects.filter(category=self.object.category)
             .exclude(pk=self.object.pk)[:10]
         )
+
+        siblings = get_siblings(self.object)
+        if len(siblings) > 1:
+            context['variants'] = [serialize_variant(p) for p in siblings]
+        else:
+            context['variants'] = []
+        context['current_id'] = self.object.pk
         return context

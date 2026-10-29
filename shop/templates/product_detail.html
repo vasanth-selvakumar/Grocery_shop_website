@@ -13,7 +13,7 @@
         <span>›</span>
         <a href="{% url 'product_list' %}?category={{ product.category|urlencode }}">{{ product.category }}</a>
         <span>›</span>
-        <b>{{ product.name }}</b>
+        <b id="pd-crumb-name">{{ product.name }}</b>
     </nav>
 
     <div class="row g-3 g-lg-4">
@@ -33,9 +33,7 @@
                     </div>
 
                     <div class="gallery-main-box">
-                        {% if product.discount_percent %}
-                        <span class="zs-off pd-off">{{ product.discount_percent }}% OFF</span>
-                        {% endif %}
+                        <span class="zs-off pd-off" id="pd-badge" {% if not product.discount_percent %}style="display:none"{% endif %}>{{ product.discount_percent }}% OFF</span>
                         <div class="gallery-main" id="gallery-main">
                             {% if product.image %}
                             <img src="{{ product.image.url }}" alt="{{ product.name }}">
@@ -59,32 +57,42 @@
             <div class="zs-card info-card">
 
                 <span class="pd-cat">{{ product.category }}</span>
-                <h1 class="pd-title">{{ product.name }}</h1>
+                <h1 class="pd-title" id="pd-title">{{ product.name }}</h1>
 
                 <div class="pd-price-row">
-                    <div class="price-box">₹{{ product.price|floatformat:0 }}</div>
-                    {% if product.discount_percent %}
-                    <div class="pd-mrp-col">
-                        <span class="zs-mrp">MRP ₹{{ product.mrp|floatformat:0 }}</span>
-                        <span class="pd-save">Save ₹{{ product.discount_amount|floatformat:0 }} ({{ product.discount_percent }}% OFF)</span>
+                    <div class="price-box" id="pd-price">₹{{ product.price|floatformat:0 }}</div>
+                    <div class="pd-mrp-col" id="pd-mrp-col" {% if not product.discount_percent %}style="display:none"{% endif %}>
+                        <span class="zs-mrp" id="pd-mrp">MRP ₹{{ product.mrp|floatformat:0 }}</span>
+                        <span class="pd-save" id="pd-save">Save ₹{{ product.discount_amount|floatformat:0 }} ({{ product.discount_percent }}% OFF)</span>
                     </div>
-                    {% endif %}
                 </div>
                 <p class="pd-tax">Inclusive of all taxes</p>
 
-                {% if product.expiry_date %}
-                <p class="pd-expiry">🗓️ Expiry: {{ product.expiry_date }}</p>
+                <!-- ================= PACK SIZE CHOOSER ================= -->
+                {% if variants %}
+                {{ variants|json_script:"variants-data" }}
+                <div class="size-picker">
+                    <div class="size-label">Pack size</div>
+                    <div class="size-row" id="size-row">
+                        {% for v in variants %}
+                        <button type="button"
+                                class="size-chip{% if v.id == current_id %} active{% endif %}{% if v.stock <= 0 %} out{% endif %}"
+                                data-id="{{ v.id }}">
+                            <span class="size-chip-name">{{ v.label }}</span>
+                            <span class="size-chip-price">₹{{ v.price|floatformat:0 }}</span>
+                            {% if v.stock <= 0 %}<span class="size-chip-out">Out of stock</span>{% endif %}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
 
-                <div class="pd-badges">
-                    <div class="badge-box"><div class="bb-ico">💵</div>Cash on<br>Delivery</div>
-                    <div class="badge-box"><div class="bb-ico">⚡</div>Fast<br>Delivery</div>
-                    <div class="badge-box"><div class="bb-ico">✅</div>Quality<br>Assured</div>
-                </div>
-
-                {% if product.stock_quantity > 0 %}
-
-                <form method="post" action="{% url 'add_to_cart' product.id %}">
+                <!-- In stock: quantity + buttons -->
+                <form method="post"
+                      id="pd-form"
+                      action="{% url 'add_to_cart' product.id %}"
+                      data-template="{% url 'add_to_cart' 987654321 %}"
+                      {% if product.stock_quantity <= 0 %}style="display:none"{% endif %}>
                     {% csrf_token %}
 
                     <div class="qty-row">
@@ -98,24 +106,59 @@
 
                     <div class="pd-btns">
                         <button type="submit" class="btn-add-cart">🛒 Add to Cart</button>
-                        <a href="{% url 'place_order' product.id %}" class="btn-order-now">⚡ Order Now</a>
+                        <a href="{% url 'place_order' product.id %}"
+                           id="pd-order"
+                           data-template="{% url 'place_order' 987654321 %}"
+                           class="btn-order-now">⚡ Order Now</a>
                     </div>
                 </form>
 
-                {% else %}
-                <button class="btn-out" disabled>Out of stock</button>
-                {% endif %}
-
-                {% if user.is_staff or user.is_superuser %}
-                <div class="staff-line">
-                    🔒 Staff only: stock {{ product.stock_quantity }}
-                </div>
-                {% endif %}
+                <!-- Out of stock -->
+                <button class="btn-out" id="pd-out" disabled {% if product.stock_quantity > 0 %}style="display:none"{% endif %}>Out of stock</button>
 
             </div>
 
         </div>
 
+    </div>
+
+    <!-- ================= HIGHLIGHTS (auto) ================= -->
+    <div class="zs-card pd-highlights">
+        <h2 class="pd-sec-title">Highlights</h2>
+
+        {% if product.base_name %}
+        <div class="hl-row">
+            <span class="hl-l">Product type</span>
+            <span class="hl-v">{{ product.base_name }}</span>
+        </div>
+        {% endif %}
+
+        {% if product.brand %}
+        <div class="hl-row">
+            <span class="hl-l">Brand</span>
+            <span class="hl-v">{{ product.brand }}</span>
+        </div>
+        {% endif %}
+
+        <div class="hl-row">
+            <span class="hl-l">Category</span>
+            <span class="hl-v">{{ product.category }}</span>
+        </div>
+
+        <div class="hl-row" id="pd-pack-row" {% if not product.pack_size %}style="display:none"{% endif %}>
+            <span class="hl-l">Pack size</span>
+            <span class="hl-v" id="pd-pack">{{ product.pack_size }}</span>
+        </div>
+
+        <div class="hl-row" id="pd-unit-row" {% if not product.price_per_unit %}style="display:none"{% endif %}>
+            <span class="hl-l">Price per unit</span>
+            <span class="hl-v" id="pd-unit">{{ product.price_per_unit }}</span>
+        </div>
+
+        <div class="hl-row">
+            <span class="hl-l">Sold by</span>
+            <span class="hl-v">Vasanth Store</span>
+        </div>
     </div>
 
     <!-- ================= SIMILAR PRODUCTS (optional) ================= -->
@@ -277,34 +320,53 @@
 .pd-mrp-col { display: flex; flex-direction: column; line-height: 1.35; }
 .pd-mrp-col .zs-mrp { font-size: 0.95rem; }
 .pd-save { color: var(--zs-green); font-weight: 700; font-size: 0.85rem; }
-.pd-tax { font-size: 0.75rem; color: var(--zs-muted); margin: 6px 0 4px; }
-.pd-expiry { font-size: 0.8rem; color: var(--zs-muted); margin: 6px 0 0; }
+.pd-tax {
+    font-size: 0.75rem;
+    color: var(--zs-muted);
+    margin: 6px 0 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--zs-border);
+}
 
-.pd-badges {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin: 18px 0;
+/* ---------- Pack size chooser ---------- */
+.size-picker { margin: 16px 0 0; }
+.size-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--zs-muted);
+    margin-bottom: 8px;
 }
-.badge-box {
-    background: #f8f9fa;
-    border: 1px solid var(--zs-border);
+.size-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.size-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 84px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--zs-border);
     border-radius: 12px;
-    padding: 10px 6px;
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: #444;
-    line-height: 1.3;
+    background: #fff;
+    color: var(--zs-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
-.bb-ico { font-size: 1.4rem; margin-bottom: 2px; }
+.size-chip:hover { border-color: var(--zs-green); }
+.size-chip.active {
+    border-color: var(--zs-green);
+    background: var(--zs-green-soft);
+    box-shadow: 0 0 0 3px rgba(12, 131, 31, 0.12);
+}
+.size-chip.out { opacity: 0.6; }
+.size-chip-name { font-weight: 700; font-size: 0.9rem; }
+.size-chip-price { font-size: 0.78rem; color: var(--zs-green); font-weight: 600; }
+.size-chip-out { font-size: 0.68rem; color: #c0392b; font-weight: 600; }
 
 /* ---------- Quantity ---------- */
 .qty-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin: 18px 0 16px;
 }
 .qty-label { font-weight: 600; font-size: 0.92rem; }
 .qty-box {
@@ -369,14 +431,27 @@
     color: var(--zs-muted);
     border: none;
     cursor: not-allowed;
+    margin-top: 18px;
 }
-.staff-line {
-    margin-top: 14px;
-    font-size: 0.75rem;
-    color: var(--zs-muted);
-    border-top: 1px dashed var(--zs-border);
-    padding-top: 10px;
+
+/* ---------- Highlights ---------- */
+.pd-highlights { padding: 20px 24px; margin-top: 20px; }
+.pd-sec-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 8px;
 }
+.hl-row {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--zs-border);
+    font-size: 0.9rem;
+}
+.hl-row:last-child { border-bottom: none; padding-bottom: 4px; }
+.hl-l { color: var(--zs-muted); }
+.hl-v { color: var(--zs-text); line-height: 1.55; }
 
 /* ---------- Similar products ---------- */
 .view-all {
@@ -435,39 +510,152 @@
     .info-card { padding: 16px; }
     .pd-title { font-size: 1.25rem; }
     .price-box { font-size: 1.6rem; }
+    .pd-highlights { padding: 16px; }
+    .hl-row { grid-template-columns: 110px minmax(0, 1fr); font-size: 0.85rem; }
 }
 </style>
 
 <script>
 (function () {
-    const main = document.getElementById('gallery-main');
-    const thumbs = document.querySelectorAll('#gallery-thumbs img');
-    if (main && thumbs.length > 0) {
+    var PLACEHOLDER_ID = '987654321';
+
+    /* ---------- Gallery ---------- */
+    function bindGallery() {
+        var main = document.getElementById('gallery-main');
+        var thumbs = document.querySelectorAll('#gallery-thumbs img');
+        if (!main || thumbs.length === 0) return;
+
         thumbs.forEach(function (t, i) {
             t.addEventListener('click', function () {
                 main.scrollTo({ left: i * main.clientWidth, behavior: 'smooth' });
             });
         });
-        main.addEventListener('scroll', function () {
-            const i = Math.round(main.scrollLeft / main.clientWidth);
+        main.onscroll = function () {
+            var i = Math.round(main.scrollLeft / main.clientWidth);
             thumbs.forEach(function (t, idx) {
                 t.classList.toggle('active', idx === i);
             });
-        });
+        };
     }
 
-    const qty = document.getElementById('qty-input');
-    const minus = document.getElementById('qty-minus');
-    const plus = document.getElementById('qty-plus');
+    function renderGallery(images, altText) {
+        var thumbBox = document.getElementById('gallery-thumbs');
+        var main = document.getElementById('gallery-main');
+        if (!thumbBox || !main) return;
+
+        thumbBox.innerHTML = '';
+        main.innerHTML = '';
+
+        if (!images.length) {
+            var empty = document.createElement('div');
+            empty.className = 'gallery-empty';
+            empty.textContent = '\uD83D\uDECD\uFE0F';
+            main.appendChild(empty);
+            return;
+        }
+
+        images.forEach(function (src, index) {
+            var thumb = document.createElement('img');
+            thumb.src = src;
+            thumb.alt = '';
+            if (index === 0) thumb.className = 'active';
+            thumbBox.appendChild(thumb);
+
+            var big = document.createElement('img');
+            big.src = src;
+            big.alt = altText;
+            main.appendChild(big);
+        });
+
+        main.scrollLeft = 0;
+        bindGallery();
+    }
+
+    bindGallery();
+
+    /* ---------- Quantity ---------- */
+    var qty = document.getElementById('qty-input');
+    var minus = document.getElementById('qty-minus');
+    var plus = document.getElementById('qty-plus');
     if (qty && minus && plus) {
-        const max = parseInt(qty.max) || 9999;
         minus.addEventListener('click', function () {
             qty.value = Math.max(1, (parseInt(qty.value) || 1) - 1);
         });
         plus.addEventListener('click', function () {
+            var max = parseInt(qty.max) || 9999;
             qty.value = Math.min(max, (parseInt(qty.value) || 1) + 1);
         });
     }
+
+    /* ---------- Pack size chooser (no page reload) ---------- */
+    var dataEl = document.getElementById('variants-data');
+    if (!dataEl) return;
+
+    var variants = JSON.parse(dataEl.textContent);
+    var byId = {};
+    variants.forEach(function (v) { byId[v.id] = v; });
+
+    function byIdEl(id) { return document.getElementById(id); }
+
+    function setText(id, text) {
+        var el = byIdEl(id);
+        if (el) el.textContent = text;
+    }
+
+    function rupees(n) {
+        return '\u20B9' + Math.round(n);
+    }
+
+    function selectVariant(id) {
+        var v = byId[id];
+        if (!v) return;
+
+        setText('pd-title', v.name);
+        setText('pd-crumb-name', v.name);
+        setText('pd-price', rupees(v.price));
+
+        var hasDiscount = v.percent > 0;
+        byIdEl('pd-mrp-col').style.display = hasDiscount ? '' : 'none';
+        byIdEl('pd-badge').style.display = hasDiscount ? '' : 'none';
+        if (hasDiscount) {
+            setText('pd-mrp', 'MRP ' + rupees(v.mrp));
+            setText('pd-save', 'Save ' + rupees(v.save) + ' (' + v.percent + '% OFF)');
+            setText('pd-badge', v.percent + '% OFF');
+        }
+
+        byIdEl('pd-pack-row').style.display = v.pack_size ? '' : 'none';
+        setText('pd-pack', v.pack_size);
+        byIdEl('pd-unit-row').style.display = v.unit_text ? '' : 'none';
+        setText('pd-unit', v.unit_text);
+
+        renderGallery(v.images, v.name);
+
+        var form = byIdEl('pd-form');
+        var order = byIdEl('pd-order');
+        form.action = form.dataset.template.replace(PLACEHOLDER_ID, v.id);
+        order.href = order.dataset.template.replace(PLACEHOLDER_ID, v.id);
+
+        var inStock = v.stock > 0;
+        form.style.display = inStock ? '' : 'none';
+        byIdEl('pd-out').style.display = inStock ? 'none' : '';
+        if (qty) {
+            qty.max = v.stock;
+            qty.value = 1;
+        }
+
+        document.querySelectorAll('#size-row .size-chip').forEach(function (chip) {
+            chip.classList.toggle('active', Number(chip.dataset.id) === v.id);
+        });
+
+        document.title = v.name + ' | Vasanth Store';
+        history.replaceState(null, '', v.url);
+    }
+
+    document.querySelectorAll('#size-row .size-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            selectVariant(Number(chip.dataset.id));
+        });
+    });
 })();
 </script>
 

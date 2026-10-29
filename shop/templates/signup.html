@@ -116,19 +116,6 @@ body {
     border-color: var(--green);
     box-shadow: 0 0 0 4px rgba(12, 131, 31, 0.14);
 }
-.input-wrap.has-toggle input { padding-right: 52px; }
-.toggle-pw {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: none;
-    font-size: 1.1rem;
-    cursor: pointer;
-}
 
 .field-err { color: #c62828; font-size: 0.78rem; margin-top: 5px; font-weight: 500; }
 .field-help { color: var(--muted); font-size: 0.72rem; margin-top: 5px; line-height: 1.45; }
@@ -186,19 +173,10 @@ body {
 }
 .btn-login:hover { background: var(--green-soft); color: var(--green-dark); }
 
-.perks {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin: 22px 16px 0;
-    font-size: 0.74rem;
-    color: var(--muted);
-}
 .back {
     display: block;
     text-align: center;
-    margin: 16px 0 calc(24px + env(safe-area-inset-bottom));
+    margin: 22px 0 calc(24px + env(safe-area-inset-bottom));
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--green);
@@ -217,7 +195,7 @@ body {
 
 <div class="card">
     <h2>Create your account 🎉</h2>
-    <p class="sub">Oru minute la mudinjidum. Apram order panna aarambinga.</p>
+    <p class="sub">Takes less than a minute. Then start ordering.</p>
 
     {% if form.non_field_errors %}
     <div class="alert">
@@ -250,14 +228,8 @@ body {
         <button type="submit" class="btn-submit">Create account</button>
     </form>
 
-    <div class="divider">Already account irukka?</div>
+    <div class="divider">Already have an account?</div>
     <a href="{% url 'login' %}" class="btn-login">Login</a>
-</div>
-
-<div class="perks">
-    <span>⚡ Fast delivery</span>
-    <span>💵 Cash on delivery</span>
-    <span>✅ Quality products</span>
 </div>
 
 <a href="{% url 'home' %}" class="back">← Back to store</a>
@@ -287,22 +259,6 @@ body {
             inp.setAttribute('autocomplete', 'family-name');
         } else if (n.indexOf('password') > -1) {
             inp.setAttribute('autocomplete', 'new-password');
-
-            // Password field ku 👁️ show/hide button
-            const wrap = inp.closest('.input-wrap');
-            wrap.classList.add('has-toggle');
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'toggle-pw';
-            btn.setAttribute('aria-label', 'Show password');
-            btn.textContent = '👁️';
-            btn.addEventListener('click', function () {
-                const show = inp.type === 'password';
-                inp.type = show ? 'text' : 'password';
-                btn.textContent = show ? '🙈' : '👁️';
-                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-            });
-            wrap.appendChild(btn);
         }
     });
 })();

@@ -74,14 +74,6 @@
                     <div class="p-noimg">🛍️</div>
                     {% endif %}
                 </a>
-                <div class="cart-ctl" data-id="{{ product.id }}" data-url="{% url 'cart_ajax' product.id %}">
-                    <button type="button" class="ctl-add">ADD</button>
-                    <div class="ctl-qty">
-                        <button type="button" class="ctl-minus">−</button>
-                        <span class="ctl-num">1</span>
-                        <button type="button" class="ctl-plus">+</button>
-                    </div>
-                </div>
             </div>
             <div class="p-body">
                 <a href="{% url 'product_detail' product.id %}" class="p-name">{{ product.name }}</a>
@@ -89,6 +81,14 @@
                 <div class="p-price-row">
                     <span class="zs-price">₹{{ product.price|floatformat:0 }}</span>
                     {% if product.mrp %}<span class="zs-mrp">₹{{ product.mrp|floatformat:0 }}</span>{% endif %}
+                </div>
+                <div class="cart-ctl" data-id="{{ product.id }}" data-url="{% url 'cart_ajax' product.id %}">
+                    <button type="button" class="ctl-add">ADD</button>
+                    <div class="ctl-qty">
+                        <button type="button" class="ctl-minus">−</button>
+                        <span class="ctl-num">1</span>
+                        <button type="button" class="ctl-plus">+</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,14 +115,6 @@
                     <div class="p-noimg">🛍️</div>
                     {% endif %}
                 </a>
-                <div class="cart-ctl" data-id="{{ product.id }}" data-url="{% url 'cart_ajax' product.id %}">
-                    <button type="button" class="ctl-add">ADD</button>
-                    <div class="ctl-qty">
-                        <button type="button" class="ctl-minus">−</button>
-                        <span class="ctl-num">1</span>
-                        <button type="button" class="ctl-plus">+</button>
-                    </div>
-                </div>
             </div>
             <div class="p-body">
                 <a href="{% url 'product_detail' product.id %}" class="p-name">{{ product.name }}</a>
@@ -130,6 +122,14 @@
                 <div class="p-price-row">
                     <span class="zs-price">₹{{ product.price|floatformat:0 }}</span>
                     {% if product.mrp %}<span class="zs-mrp">₹{{ product.mrp|floatformat:0 }}</span>{% endif %}
+                </div>
+                <div class="cart-ctl" data-id="{{ product.id }}" data-url="{% url 'cart_ajax' product.id %}">
+                    <button type="button" class="ctl-add">ADD</button>
+                    <div class="ctl-qty">
+                        <button type="button" class="ctl-minus">−</button>
+                        <span class="ctl-num">1</span>
+                        <button type="button" class="ctl-plus">+</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -172,12 +172,6 @@
     </div>
 </div>
 
-<!-- ================= FLOATING CART BAR (live update) ================= -->
-<a href="{% url 'view_cart' %}" id="cart-bar" class="home-cart-bar" style="display: none;">
-    <span>🛒 <span id="cart-count">{{ cart_count }}</span> items</span>
-    <span>View cart ➜</span>
-</a>
-
 <!-- ================= WHATSAPP BUTTON ================= -->
 <a href="https://wa.me/918015180625?text=Hi%20Vasanth%20Store%2C%20I%20want%20to%20place%20an%20order"
    class="wa-btn" target="_blank" rel="noopener" aria-label="Order on WhatsApp">
@@ -188,7 +182,7 @@
 <style>
 body { overflow-x: hidden; }
 
-/* Hide the static floating bar from base.html (this page has its own live bar) */
+/* Hide the static floating bar from base.html */
 .zs-float-cart { display: none !important; }
 
 /* ---------- HERO CAROUSEL (native swipe, no auto-slide) ---------- */
@@ -348,7 +342,7 @@ body { overflow-x: hidden; }
 .p-img {
     position: relative;
     background: #fff;
-    padding: 14px 12px 18px;
+    padding: 14px 12px 6px;
 }
 .p-img img {
     display: block;
@@ -365,24 +359,23 @@ body { overflow-x: hidden; }
     background: var(--zs-bg);
     border-radius: 10px;
 }
-/* Top padding leaves room for the ADD button hanging below the image, so it never covers the name */
 .p-body {
-    padding: 22px 12px 12px;
+    padding: 4px 12px 12px;
     display: flex;
     flex-direction: column;
     flex: 1;
 }
+/* Full name theriyum: clamp remove, wrap aagum */
 .p-name {
     color: var(--zs-text);
     font-weight: 600;
     font-size: 0.86rem;
     line-height: 1.25;
     text-decoration: none;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 2.15em;
+    display: block;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
 }
 .p-name:hover { color: var(--zs-green); }
 .p-cat { font-size: 0.72rem; color: var(--zs-muted); margin: 2px 0 6px; }
@@ -391,16 +384,15 @@ body { overflow-x: hidden; }
     display: flex;
     align-items: baseline;
     gap: 6px;
+    flex-wrap: wrap;
 }
 .p-price-row .zs-price { font-size: 1rem; }
 
-/* ---------- ADD / - 1 + CONTROL (bottom-right edge of the image) ---------- */
+/* ---------- ADD / - 1 + CONTROL (card kku keela, full width) ---------- */
 .cart-ctl {
-    position: absolute;
-    right: 10px;
-    bottom: -16px;
-    width: 72px;
-    z-index: 6;
+    position: static;
+    width: 100%;
+    margin-top: 8px;
 }
 .ctl-add {
     width: 100%;
@@ -412,7 +404,6 @@ body { overflow-x: hidden; }
     font-weight: 700;
     font-size: 0.82rem;
     letter-spacing: 0.4px;
-    box-shadow: 0 3px 8px rgba(12, 131, 31, 0.18);
     transition: all 0.15s ease;
     cursor: pointer;
 }
@@ -426,7 +417,6 @@ body { overflow-x: hidden; }
     color: #fff;
     border-radius: 9px;
     overflow: hidden;
-    box-shadow: 0 3px 8px rgba(12, 131, 31, 0.3);
 }
 .ctl-qty button {
     background: transparent;
@@ -434,7 +424,7 @@ body { overflow-x: hidden; }
     color: #fff;
     font-size: 1.15rem;
     font-weight: 700;
-    width: 26px;
+    width: 36px;
     height: 32px;
     line-height: 1;
     padding: 0;
@@ -461,26 +451,6 @@ body { overflow-x: hidden; }
 .store-info { padding: 18px 12px; }
 .si-ico { font-size: 1.6rem; }
 
-/* ---------- LIVE FLOATING CART BAR ---------- */
-.home-cart-bar {
-    position: fixed;
-    left: 20px;
-    bottom: 20px;
-    z-index: 1035;
-    background: var(--zs-green);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.92rem;
-    padding: 12px 20px;
-    border-radius: 30px;
-    box-shadow: 0 8px 22px rgba(12, 131, 31, 0.45);
-    align-items: center;
-    gap: 18px;
-    animation: zsSlideUp 0.35s ease;
-}
-.home-cart-bar:hover { background: var(--zs-green-dark); color: #fff; }
-
 /* ---------- WHATSAPP BUTTON ---------- */
 .wa-btn {
     position: fixed;
@@ -500,13 +470,6 @@ body { overflow-x: hidden; }
 
 /* ---------- MOBILE: sit above the bottom nav ---------- */
 @media (max-width: 991.98px) {
-    .home-cart-bar {
-        left: 12px;
-        right: 12px;
-        bottom: 78px;
-        justify-content: space-between;
-        border-radius: 14px;
-    }
     .wa-btn {
         right: 12px;
         bottom: 78px;
@@ -521,8 +484,6 @@ body { overflow-x: hidden; }
         border: 2px solid #fff;
     }
     .wa-btn .wa-text { display: none; }
-    /* When the cart bar is showing, lift the chat button above it */
-    body.has-cart-bar .wa-btn { bottom: 140px; }
 }
 </style>
 
@@ -530,8 +491,6 @@ body { overflow-x: hidden; }
 (function () {
     const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
     const qtyMap = JSON.parse(document.getElementById('cart-qty').textContent || '{}');
-    const bar = document.getElementById('cart-bar');
-    const countEl = document.getElementById('cart-count');
     const cartUrl = "{% url 'view_cart' %}";
 
     // Update the header cart badge and the mobile bottom nav badge live
@@ -552,13 +511,6 @@ body { overflow-x: hidden; }
                 b.remove();
             }
         });
-    }
-
-    function setCount(n) {
-        countEl.textContent = n;
-        bar.style.display = n > 0 ? 'flex' : 'none';
-        document.body.classList.toggle('has-cart-bar', n > 0);
-        updateNavBadges(n);
     }
 
     function setQty(ctl, qty) {
@@ -589,7 +541,7 @@ body { overflow-x: hidden; }
                 showToast('Added to cart ✓');
             }
             setQtyEverywhere(ctl.dataset.id, data.qty);
-            setCount(data.cart_count);
+            updateNavBadges(data.cart_count);
         })
         .catch(function () { showToast('Something went wrong. Please try again.'); });
     }
@@ -601,7 +553,7 @@ body { overflow-x: hidden; }
         ctl.querySelector('.ctl-minus').addEventListener('click', function () { send(ctl, 'decrease'); });
     });
 
-    setCount({{ cart_count|default:0 }});
+    updateNavBadges({{ cart_count|default:0 }});
 
     // Hero slider: keep the dots in sync with the swipe position
     const track = document.getElementById('heroTrack');
